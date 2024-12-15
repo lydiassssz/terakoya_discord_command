@@ -12,5 +12,13 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lydiassssz/terakoya_discord_command.git"
+  },
+  "bugs": {
+    "url": "https://github.com/lydiassssz/terakoya_discord_command/issues"
+  },
+  "homepage": "https://github.com/lydiassssz/terakoya_discord_command#readme",
   "description": ""
 }
