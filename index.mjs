@@ -72,19 +72,27 @@ async function handleHelloCommand(body, botToken, logChannelId) {
     });
 }
 
-// remove_accessコマンドの処理
 async function handleRemoveAccessCommand(body, botToken, logChannelId) {
     const channelId = body.channel_id; // チャンネルID
     const userId = body.member?.user?.id; // ユーザーID
+
+    // チャンネル情報の取得
+    const channelInfo = await getChannelInfo(channelId, botToken);
+    if (!channelInfo) {
+        console.error("チャンネル情報の取得に失敗しました");
+        await followUpMessage(body, botToken, "チャンネル情報を取得できなかったため、処理を中断しました。", true);
+        return;
+    }
+
+    const categoryName = channelInfo.parent_name || "未分類"; // カテゴリー名
+    const channelName = channelInfo.name || "不明なチャンネル"; // チャンネル名
+    const formattedChannel = `${categoryName}:${channelName}`; // フォーマット例: "カテゴリー名:チャンネル名"
 
     // チャンネル権限の剥奪
     const success = await modifyUserChannelPermission(channelId, userId, botToken, { allow: 0, deny: VIEW_CHANNEL });
 
     // ログ送信
     await sendLogMessage(body, botToken, logChannelId);
-
-    // 権限剥奪完了をエフェメラルメッセージで通知
-    await followUpMessage(body, botToken, "このチャンネルの権限を剥奪します。復元したい場合はDMを確認してください。", true);
 
     if (!success) {
         // 権限変更に失敗した場合のエフェメラル応答
@@ -96,12 +104,57 @@ async function handleRemoveAccessCommand(body, botToken, logChannelId) {
     const dmChannelId = await createDM(userId, botToken);
     if (dmChannelId) {
         const customId = `revert_access-${channelId}-${userId}`;
-        await sendDM(dmChannelId, "このチャンネルの権限が剥奪されました。「復元」をクリックして権限を戻すことができます。", customId, botToken);
+        await sendDM(dmChannelId, `権限が剥奪されました: ${formattedChannel}\n「復元」をクリックして権限を戻すことができます。`, customId, botToken);
     } else {
         console.error("DMチャンネルの作成に失敗しました");
     }
-    
+
+    // 権限剥奪完了をエフェメラルメッセージで通知
+    await followUpMessage(body, botToken, `${formattedChannel} の権限を剥奪しました。DMを確認してください。`, true);
 }
+
+// チャンネル情報を取得する関数
+async function getChannelInfo(channelId, botToken) {
+    const url = `https://discord.com/api/v10/channels/${channelId}`; // チャンネル詳細情報エンドポイント
+    const res = await fetch(url, {
+        method: "GET",
+        headers: {
+            "Authorization": `Bot ${botToken}` // Botトークンを認証に使用
+        }
+    });
+
+    if (!res.ok) {
+        console.error("チャンネル情報の取得に失敗しました:", await res.text());
+        return null;
+    }
+
+    const channelData = await res.json(); // チャンネルデータをJSON形式で取得
+
+    return {
+        name: channelData.name, // チャンネル名
+        parent_name: channelData.parent_id ? await getParentCategoryName(channelData.parent_id, botToken) : null // 親カテゴリ名
+    };
+}
+
+// カテゴリー名を取得する関数
+async function getParentCategoryName(parentId, botToken) {
+    const url = `https://discord.com/api/v10/channels/${parentId}`; // 親カテゴリの詳細情報エンドポイント
+    const res = await fetch(url, {
+        method: "GET",
+        headers: {
+            "Authorization": `Bot ${botToken}` // Botトークンを認証に使用
+        }
+    });
+
+    if (!res.ok) {
+        console.error("親カテゴリ情報の取得に失敗しました:", await res.text());
+        return "不明なカテゴリ";
+    }
+
+    const parentData = await res.json();
+    return parentData.name || "不明なカテゴリ"; // 親カテゴリ名またはデフォルト
+}
+
 
 
 // ボタンやコンポーネントのインタラクション処理
