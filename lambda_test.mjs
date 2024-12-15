@@ -9,10 +9,6 @@ export const handler = async (event) => {
     const timestamp = event.headers["x-signature-timestamp"];
     const rawBody = event.body;
 
-    console.log("Signature:", signature);
-    console.log("Timestamp:", timestamp);
-    console.log("Raw Body:", rawBody);
-
     // リクエスト署名の検証
     if (!verifyRequest(rawBody, signature, timestamp, DISCORD_PUBLIC_KEY)) {
         return { statusCode: 401, body: "Invalid request signature" };
@@ -20,45 +16,49 @@ export const handler = async (event) => {
 
     const body = JSON.parse(rawBody);
 
-    // PINGリクエストの処理
+    // リクエストの種類による処理
     if (body.type === 1) {
-        return respondJSON({ type: 1 });
+        return respondJSON({ type: 1 }); // PINGリクエストの応答
     }
 
-    // スラッシュコマンドの処理
     if (body.type === 2) {
-        const commandName = body.data.name;
+        return handleCommand(body); // スラッシュコマンドの処理
+    }
 
-        if (commandName === "hello") {
-            // helloコマンドの応答
+    return { statusCode: 404, body: "Not found" }; // 未対応のリクエスト
+};
+
+// スラッシュコマンドの処理関数
+function handleCommand(body) {
+    const commandName = body.data.name;
+
+    // コマンドごとの処理を分岐
+    switch (commandName) {
+        case "hello":
+            return handleHelloCommand();
+        default:
             return respondJSON({
-                type: 4, // チャネルに即座にメッセージを返す
+                type: 4,
                 data: {
-                    content: "hello"
+                    content: "Command not recognized"
                 }
             });
-        }
-
-        // 未対応のコマンドの場合
-        return respondJSON({
-            type: 4,
-            data: {
-                content: "Command not recognized"
-            }
-        });
     }
+}
 
-    return { statusCode: 404, body: "Not found" };
-};
+// helloコマンドの処理
+function handleHelloCommand() {
+    return respondJSON({
+        type: 4, // 即座にメッセージを返す
+        data: {
+            content: "hello"
+        }
+    });
+}
 
 // リクエスト署名の検証関数
 function verifyRequest(rawBody, signature, timestamp, publicKey) {
     if (!rawBody || !signature || !timestamp || !publicKey) {
-        console.error("Missing parameters in verifyRequest");
-        console.error("rawBody:", rawBody);
-        console.error("signature:", signature);
-        console.error("timestamp:", timestamp);
-        console.error("publicKey:", publicKey);
         return false;
     }
 
@@ -67,7 +67,6 @@ function verifyRequest(rawBody, signature, timestamp, publicKey) {
     const key = Buffer.from(publicKey, "hex");
     return nacl.sign.detached.verify(message, sig, key);
 }
-
 
 // JSON形式のレスポンスを生成
 function respondJSON(jsonBody) {
