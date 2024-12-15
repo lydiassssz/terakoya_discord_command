@@ -83,6 +83,9 @@ async function handleRemoveAccessCommand(body, botToken, logChannelId) {
     // ログ送信
     await sendLogMessage(body, botToken, logChannelId);
 
+    // 権限剥奪完了をエフェメラルメッセージで通知
+    await followUpMessage(body, botToken, "このチャンネルの権限を剥奪します。復元したい場合はDMを確認してください。", true);
+
     if (!success) {
         // 権限変更に失敗した場合のエフェメラル応答
         await followUpMessage(body, botToken, "権限の剥奪に失敗しました。Botの権限を確認してください。", true);
@@ -97,9 +100,7 @@ async function handleRemoveAccessCommand(body, botToken, logChannelId) {
     } else {
         console.error("DMチャンネルの作成に失敗しました");
     }
-
-    // 権限剥奪完了をエフェメラルメッセージで通知
-    await followUpMessage(body, botToken, "このチャンネルの権限を剥奪しました。DMを確認してください。", true);
+    
 }
 
 
