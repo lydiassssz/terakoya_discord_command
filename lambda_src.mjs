@@ -1,4 +1,6 @@
 import nacl from "tweetnacl";
+import dotenv from "dotenv";
+dotenv.config();
 
 const VIEW_CHANNEL = 1 << 10; // VIEW_CHANNEL (1024)
 

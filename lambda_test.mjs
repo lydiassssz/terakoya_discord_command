@@ -1,4 +1,6 @@
 import nacl from "tweetnacl";
+import dotenv from "dotenv";
+dotenv.config();
 
 export const handler = async (event) => {
     const DISCORD_PUBLIC_KEY = process.env.DISCORD_PUBLIC_KEY;
