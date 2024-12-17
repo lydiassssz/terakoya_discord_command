@@ -1,241 +1,135 @@
+import AWS from "aws-sdk";
 import nacl from "tweetnacl";
 import dotenv from "dotenv";
 dotenv.config();
 
 const VIEW_CHANNEL = 1 << 10; // チャンネル閲覧権限 (1024)
 
+// Lambdaクライアントの初期化
+const lambda = new AWS.Lambda({ region: "ap-northeast-1" });
+
 export const handler = async (event) => {
-    const DISCORD_PUBLIC_KEY = process.env.DISCORD_PUBLIC_KEY; // Discordの公開鍵
-    const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN; // Botトークン
-    const BOT_LOG_CHANNEL_ID = process.env.BOT_LOG_CHANNEL_ID; // ログ用チャンネルID
+  const DISCORD_PUBLIC_KEY = process.env.DISCORD_PUBLIC_KEY;
+  const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
+  const BOT_LOG_CHANNEL_ID = process.env.BOT_LOG_CHANNEL_ID;
 
-    const signature = event.headers["x-signature-ed25519"]; // リクエスト署名
-    const timestamp = event.headers["x-signature-timestamp"]; // リクエストタイムスタンプ
-    const rawBody = event.body; // リクエストボディ
+  const signature = event.headers["x-signature-ed25519"];
+  const timestamp = event.headers["x-signature-timestamp"];
+  const rawBody = event.body;
 
-    // 署名検証
-    if (!verifyRequest(rawBody, signature, timestamp, DISCORD_PUBLIC_KEY)) {
-        return { statusCode: 401, body: "無効なリクエスト署名です" };
-    }
+  if (!verifyRequest(rawBody, signature, timestamp, DISCORD_PUBLIC_KEY)) {
+    return { statusCode: 401, body: "無効なリクエスト署名です" };
+  }
 
-    const body = JSON.parse(rawBody);
+  const body = JSON.parse(rawBody);
 
-    // リクエスト種別に応じた処理
-    if (body.type === 1) {
-        return respondJSON({ type: 1 }); // PINGリクエストへの応答
-    }
+  if (body.type === 1) {
+    return respondJSON({ type: 1 });
+  }
 
-    if (body.type === 2) {
-        return await handleSlashCommand(body, DISCORD_BOT_TOKEN, BOT_LOG_CHANNEL_ID); // スラッシュコマンドの処理
-    }
+  if (body.type === 2) {
+    return await handleSlashCommand(body, DISCORD_BOT_TOKEN, BOT_LOG_CHANNEL_ID);
+  }
 
-    if (body.type === 3) {
-        return await handleComponentInteraction(body, DISCORD_BOT_TOKEN, BOT_LOG_CHANNEL_ID); // ボタンやコンポーネントの処理
-    }
-
-    return { statusCode: 404, body: "未対応のリクエストです" }; // 未対応のリクエスト
+  return { statusCode: 404, body: "未対応のリクエストです" };
 };
 
 // スラッシュコマンドの処理
 async function handleSlashCommand(body, botToken, logChannelId) {
-    const commandName = body.data.name;
+  const commandName = body.data.name;
 
-    // コマンド名に応じた処理
-    switch (commandName) {
-        case "hello":
-            return await handleHelloCommand(body, botToken, logChannelId); // helloコマンド
-        case "remove_access":
-            return await handleRemoveAccessCommand(body, botToken, logChannelId); // remove_accessコマンド
-        default:
-            await sendLogMessage(body, botToken, logChannelId); // 未対応コマンドのログ送信
-            return respondJSON({
-                type: 4,
-                data: { content: "未対応のコマンドです" }
-            });
-    }
+  switch (commandName) {
+    case "hello":
+      return await handleHelloCommand(body, botToken, logChannelId);
+    case "subject_make":
+      return await handleSubjectMakeCommand(body, botToken, logChannelId);
+    default:
+      await sendLogMessage(body, botToken, logChannelId);
+      return respondJSON({
+        type: 4,
+        data: { content: "未対応のコマンドです" },
+      });
+  }
 }
 
-// helloコマンドの処理（エフェメラルメッセージ対応）
-async function handleHelloCommand(body, botToken, logChannelId) {
-    const user = body.member.user;
+// subject_makeコマンドの処理
+async function handleSubjectMakeCommand(body, botToken, logChannelId) {
+  const name = body.data.options?.find((opt) => opt.name === "name")?.value;
 
-    // コマンド実行ログの送信
-    await sendLogMessage(body, botToken, logChannelId);
-
-    // 実行者にのみ見えるエフェメラルメッセージで応答
+  if (!name) {
     return respondJSON({
-        type: 4, // 即時応答
-        data: {
-            content: `こんにちは、${user.username}さん！`, // メッセージ内容
-            flags: 64 // エフェメラルメッセージ（実行者にのみ表示）
-        }
+      type: 4,
+      data: { content: "名前が指定されていません。" },
     });
-}
+  }
 
-async function handleRemoveAccessCommand(body, botToken, logChannelId) {
-    const channelId = body.channel_id; // チャンネルID
-    const userId = body.member?.user?.id; // ユーザーID
+  const payload = {
+    table: "subject",
+    track: "new",
+    name: name,
+  };
 
-    // チャンネル情報の取得
-    const channelInfo = await getChannelInfo(channelId, botToken);
-    if (!channelInfo) {
-        console.error("チャンネル情報の取得に失敗しました");
-        await followUpMessage(body, botToken, "チャンネル情報を取得できなかったため、処理を中断しました。", true);
-        return;
-    }
+  try {
+    // Lambda関数を非同期呼び出し
+    await lambda
+      .invoke({
+        FunctionName: "arn:aws:lambda:ap-northeast-1:021891619750:function:Terakoya_DynamoDB_Write",
+        InvocationType: "Event", // 非同期呼び出し
+        Payload: JSON.stringify(payload),
+      })
+      .promise();
 
-    const categoryName = channelInfo.parent_name || "未分類"; // カテゴリー名
-    const channelName = channelInfo.name || "不明なチャンネル"; // チャンネル名
-    const formattedChannel = `${categoryName}:${channelName}`; // フォーマット例: "カテゴリー名:チャンネル名"
-
-    // チャンネル権限の剥奪
-    const success = await modifyUserChannelPermission(channelId, userId, botToken, { allow: 0, deny: VIEW_CHANNEL });
-
-    // ログ送信
     await sendLogMessage(body, botToken, logChannelId);
 
-    if (!success) {
-        // 権限変更に失敗した場合のエフェメラル応答
-        await followUpMessage(body, botToken, "権限の剥奪に失敗しました。Botの権限を確認してください。", true);
-        return;
-    }
-
-    // ユーザーへのDM送信
-    const dmChannelId = await createDM(userId, botToken);
-    if (dmChannelId) {
-        const customId = `revert_access-${channelId}-${userId}`;
-        await sendDM(dmChannelId, `権限が剥奪されました: ${formattedChannel}\n「復元」をクリックして権限を戻すことができます。`, customId, botToken);
-    } else {
-        console.error("DMチャンネルの作成に失敗しました");
-    }
-
-    // 権限剥奪完了をエフェメラルメッセージで通知
-    await followUpMessage(body, botToken, `${formattedChannel} の権限を剥奪しました。DMを確認してください。`, true);
-}
-
-// チャンネル情報を取得する関数
-async function getChannelInfo(channelId, botToken) {
-    const url = `https://discord.com/api/v10/channels/${channelId}`; // チャンネル詳細情報エンドポイント
-    const res = await fetch(url, {
-        method: "GET",
-        headers: {
-            "Authorization": `Bot ${botToken}` // Botトークンを認証に使用
-        }
+    return respondJSON({
+      type: 4,
+      data: {
+        content: `subjectテーブルに「${name}」が登録されました。`,
+      },
     });
-
-    if (!res.ok) {
-        console.error("チャンネル情報の取得に失敗しました:", await res.text());
-        return null;
-    }
-
-    const channelData = await res.json(); // チャンネルデータをJSON形式で取得
-
-    return {
-        name: channelData.name, // チャンネル名
-        parent_name: channelData.parent_id ? await getParentCategoryName(channelData.parent_id, botToken) : null // 親カテゴリ名
-    };
-}
-
-// カテゴリー名を取得する関数
-async function getParentCategoryName(parentId, botToken) {
-    const url = `https://discord.com/api/v10/channels/${parentId}`; // 親カテゴリの詳細情報エンドポイント
-    const res = await fetch(url, {
-        method: "GET",
-        headers: {
-            "Authorization": `Bot ${botToken}` // Botトークンを認証に使用
-        }
+  } catch (error) {
+    console.error("Lambda呼び出しエラー:", error);
+    return respondJSON({
+      type: 4,
+      data: { content: "データ登録中にエラーが発生しました。" },
     });
-
-    if (!res.ok) {
-        console.error("親カテゴリ情報の取得に失敗しました:", await res.text());
-        return "不明なカテゴリ";
-    }
-
-    const parentData = await res.json();
-    return parentData.name || "不明なカテゴリ"; // 親カテゴリ名またはデフォルト
+  }
 }
 
-
-
-// ボタンやコンポーネントのインタラクション処理
-async function handleComponentInteraction(body, botToken, logChannelId) {
-    const customId = body.data.custom_id;
-
-    // カスタムIDが「revert_access-」で始まる場合
-    if (customId.startsWith("revert_access-")) {
-        const [_, channelId, userId] = customId.split("-");
-        const success = await modifyUserChannelPermission(channelId, userId, botToken, { allow: 0, deny: 0 });
-
-        // 権限復元処理のログ送信
-        await sendLogMessage(body, botToken, logChannelId);
-
-        // DMで結果通知
-        const dmChannelId = await createDM(userId, botToken);
-        if (dmChannelId) {
-            const message = success
-                ? "権限が復元されました"
-                : "権限の復元に失敗しました。Botの権限を確認してください。";
-            await sendDM(dmChannelId, message, null, botToken);
-        }
-    }
-
-    // インタラクションにACK応答
-    return respondJSON({ type: 6 });
-}
-
-// リクエスト署名の検証
+// 署名検証
 function verifyRequest(rawBody, signature, timestamp, publicKey) {
-    const message = Buffer.from(timestamp + rawBody);
-    const sig = Buffer.from(signature, "hex");
-    const key = Buffer.from(publicKey, "hex");
-    return nacl.sign.detached.verify(message, sig, key);
+  const message = Buffer.from(timestamp + rawBody);
+  const sig = Buffer.from(signature, "hex");
+  const key = Buffer.from(publicKey, "hex");
+  return nacl.sign.detached.verify(message, sig, key);
 }
 
 // JSONレスポンスを生成
 function respondJSON(jsonBody) {
-    return {
-        statusCode: 200,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(jsonBody)
-    };
-}
-
-async function followUpMessage(interaction, botToken, content) {
-    const url = `https://discord.com/api/v10/webhooks/${interaction.application_id}/${interaction.token}/messages/@original`;
-    const res = await fetch(url, {
-        method: "PATCH",
-        headers: {
-            "Authorization": `Bot ${botToken}`,
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ content })
-    });
-    if (!res.ok) {
-        console.error("Follow-upメッセージの送信に失敗しました:", await res.text());
-    }
+  return {
+    statusCode: 200,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(jsonBody),
+  };
 }
 
 async function sendLogMessage(body, botToken, channelId) {
-    const user = body.member?.user || body.user;
-    const username = user?.username || "不明なユーザー";
-    const discriminator = user?.discriminator || "0000";
+  const user = body.member?.user || body.user;
+  const username = user?.username || "不明なユーザー";
+  const discriminator = user?.discriminator || "0000";
+  const commandName = body.data.name;
 
-    const commandName = body.data.name;
-    const logMessage = `**コマンド実行**\nユーザー: \`${username}#${discriminator}\`\nコマンド: \`/${commandName}\``;
+  const logMessage = `**コマンド実行**\nユーザー: \`${username}#${discriminator}\`\nコマンド: \`/${commandName}\``;
 
-    const url = `https://discord.com/api/v10/channels/${channelId}/messages`;
-    const response = await fetch(url, {
-        method: "POST",
-        headers: {
-            "Authorization": `Bot ${botToken}`,
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ content: logMessage })
-    });
-
-    if (!response.ok) {
-        console.error("ログメッセージの送信に失敗しました:", await response.text());
-    }
+  const url = `https://discord.com/api/v10/channels/${channelId}/messages`;
+  await fetch(url, {
+    method: "POST",
+    headers: {
+      Authorization: `Bot ${botToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ content: logMessage }),
+  });
 }
 
 
