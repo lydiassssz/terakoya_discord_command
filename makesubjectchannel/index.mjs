@@ -1,50 +1,61 @@
 import fetch from "node-fetch";
 import dotenv from "dotenv";
+import { DynamoDBClient, UpdateItemCommand } from "@aws-sdk/client-dynamodb";
 dotenv.config();
 
-const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
-const BOT_LOG_CHANNEL_ID = process.env.BOT_LOG_CHANNEL_ID;
-const HAKOBUNE_CATEGORY_ID = process.env.HAKOBUNE_CATEGOLY_ID;
+const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN; // Botトークン
+const BOT_LOG_CHANNEL_ID = process.env.BOT_LOG_CHANNEL_ID; // ログ出力先チャンネルID
+const HAKOBUNE_CATEGORY_ID = process.env.HAKOBUNE_CATEGOLY_ID; // カテゴリID
+const GUILD_ID = process.env.GUILD_ID; // DiscordサーバーID
+const DYNAMO_TABLE_NAME = process.env.DYNAMO_TABLE_NAME; // DynamoDBテーブル名
+
+// DynamoDBクライアント初期化
+const dynamoClient = new DynamoDBClient({ region: "ap-northeast-1" });
 
 export const handler = async (event) => {
-  console.log("Received DynamoDB Stream event:", JSON.stringify(event, null, 2));
+  console.log("DynamoDB ストリームイベントを受信:", JSON.stringify(event, null, 2));
 
-  // レコードごとに処理
   for (const record of event.Records) {
     if (record.eventName === "INSERT") {
       const newItem = record.dynamodb.NewImage;
 
-      // DynamoDBのデータをJSON形式に変換
       const track = newItem?.Track?.S || "";
       const name = newItem?.Name?.S || "";
 
-      // フィルタリング条件: trackが"new"
       if (track === "new") {
-        console.log(`Processing new record with track: "new" and name: ${name}`);
+        console.log(`新しいデータを処理中: track: "new", name: ${name}`);
 
-        // Discordフォーラムチャンネル作成
+        // Discord上に新しいフォーラムチャンネルを作成
         const channelId = await createForumChannel(name);
 
-        // チャンネル作成成功時にログを出力
         if (channelId) {
-          await sendLogMessage(`フォーラムチャンネル「${name}」が作成されました。`, BOT_LOG_CHANNEL_ID);
+          console.log(`作成したチャンネルID: ${channelId}`);
+
+          // DynamoDBのTrackをチャンネルIDに更新
+          await updateTrackWithChannelId(newItem, channelId);
+
+          // ログメッセージ送信
+          await sendLogMessage(
+            `フォーラムチャンネル「${name}」が作成されました。Trackが更新されました（${channelId}）。`,
+            BOT_LOG_CHANNEL_ID
+          );
         }
       }
     }
   }
 
-  return { statusCode: 200, body: "Processed DynamoDB Stream records." };
+  return { statusCode: 200, body: "DynamoDB ストリームイベントを処理しました。" };
 };
 
-// Discordのフォーラムチャンネルを作成する関数
+// Discord上にフォーラムチャンネルを作成する関数
 async function createForumChannel(channelName) {
-  const url = `https://discord.com/api/v10/guilds/${process.env.GUILD_ID}/channels`;
+  const url = `https://discord.com/api/v10/guilds/${GUILD_ID}/channels`;
 
   const payload = {
     name: channelName,
     type: 15, // 15: フォーラムチャンネル
-    parent_id: HAKOBUNE_CATEGORY_ID, // カテゴリーID
-    permission_overwrites: [], // カテゴリーの権限設定と同期
+    parent_id: HAKOBUNE_CATEGORY_ID,
+    permission_overwrites: [],
   };
 
   try {
@@ -59,16 +70,37 @@ async function createForumChannel(channelName) {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("Failed to create channel:", errorText);
+      console.error("チャンネル作成に失敗:", errorText);
       return null;
     }
 
     const data = await response.json();
-    console.log(`Successfully created forum channel with ID: ${data.id}`);
     return data.id; // 作成したチャンネルのIDを返す
   } catch (error) {
-    console.error("Error creating forum channel:", error);
+    console.error("チャンネル作成中にエラー:", error);
     return null;
+  }
+}
+
+// DynamoDBのTrackをチャンネルIDに更新する関数
+async function updateTrackWithChannelId(item, channelId) {
+  const params = {
+    TableName: DYNAMO_TABLE_NAME,
+    Key: {
+      Track: { S: item.Track.S }, // キー条件（Track）
+    },
+    UpdateExpression: "SET Track = :channelId",
+    ExpressionAttributeValues: {
+      ":channelId": { S: channelId }, // 新しいTrackの値
+    },
+  };
+
+  try {
+    const command = new UpdateItemCommand(params);
+    await dynamoClient.send(command);
+    console.log(`DynamoDBのTrackをチャンネルID(${channelId})に更新しました。`);
+  } catch (error) {
+    console.error("DynamoDBの更新中にエラー:", error);
   }
 }
 
@@ -76,9 +108,7 @@ async function createForumChannel(channelName) {
 async function sendLogMessage(message, logChannelId) {
   const url = `https://discord.com/api/v10/channels/${logChannelId}/messages`;
 
-  const payload = {
-    content: message,
-  };
+  const payload = { content: message };
 
   try {
     const response = await fetch(url, {
@@ -92,11 +122,11 @@ async function sendLogMessage(message, logChannelId) {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("Failed to send log message:", errorText);
+      console.error("ログメッセージの送信に失敗:", errorText);
     } else {
-      console.log("Log message sent successfully.");
+      console.log("ログメッセージを送信しました。");
     }
   } catch (error) {
-    console.error("Error sending log message:", error);
+    console.error("ログメッセージ送信中にエラー:", error);
   }
 }

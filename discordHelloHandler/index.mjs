@@ -24,10 +24,12 @@ export const handler = async (event) => {
   const body = JSON.parse(rawBody);
 
   if (body.type === 1) {
+    // PING
     return respondJSON({ type: 1 });
   }
 
   if (body.type === 2) {
+    // スラッシュコマンド
     return await handleSlashCommand(body, DISCORD_BOT_TOKEN, BOT_LOG_CHANNEL_ID);
   }
 
@@ -41,8 +43,14 @@ async function handleSlashCommand(body, botToken, logChannelId) {
   switch (commandName) {
     case "hello":
       return await handleHelloCommand(body, botToken, logChannelId);
+
     case "subject_make":
       return await handleSubjectMakeCommand(body, botToken, logChannelId);
+
+    // 復活させた remove_access コマンド
+    case "remove_access":
+      return await handleRemoveAccessCommand(body, botToken, logChannelId);
+
     default:
       await sendLogMessage(body, botToken, logChannelId);
       return respondJSON({
@@ -73,7 +81,8 @@ async function handleSubjectMakeCommand(body, botToken, logChannelId) {
     // Lambda関数を非同期呼び出し
     await lambda
       .invoke({
-        FunctionName: "arn:aws:lambda:ap-northeast-1:021891619750:function:Terakoya_DynamoDB_Write",
+        FunctionName:
+          "arn:aws:lambda:ap-northeast-1:021891619750:function:Terakoya_DynamoDB_Write",
         InvocationType: "Event", // 非同期呼び出し
         Payload: JSON.stringify(payload),
       })
@@ -96,6 +105,54 @@ async function handleSubjectMakeCommand(body, botToken, logChannelId) {
   }
 }
 
+// remove_accessコマンドの処理（復活）
+async function handleRemoveAccessCommand(body, botToken, logChannelId) {
+  // スラッシュコマンドで指定したユーザーIDを取得 (例: /remove_access user: <@12345678>)
+  // 実際には application command の “options” に合わせて修正してください
+  const userIdOption = body.data.options?.find((opt) => opt.name === "user");
+  if (!userIdOption || !userIdOption.value) {
+    return respondJSON({
+      type: 4,
+      data: { content: "ユーザーが指定されていません。" },
+    });
+  }
+  const userId = userIdOption.value;
+
+  // コマンドが実行されたチャンネルIDを取得
+  // もし特定のチャンネルをスラッシュコマンドで指定したければ別途オプションを追加してください
+  const channelId = body.channel_id;
+
+  // ここでVIEW_CHANNELの許可を0に、denyをVIEW_CHANNELにすることで閲覧権限を剥奪
+  try {
+    const success = await modifyUserChannelPermission(channelId, userId, botToken, {
+      allow: 0,
+      deny: VIEW_CHANNEL,
+    });
+
+    await sendLogMessage(body, botToken, logChannelId);
+
+    if (!success) {
+      return respondJSON({
+        type: 4,
+        data: { content: "権限の変更に失敗しました。" },
+      });
+    }
+
+    return respondJSON({
+      type: 4,
+      data: {
+        content: `ユーザー <@${userId}> の閲覧権限を削除しました。`,
+      },
+    });
+  } catch (err) {
+    console.error("remove_accessコマンドエラー:", err);
+    return respondJSON({
+      type: 4,
+      data: { content: "権限削除中にエラーが発生しました。" },
+    });
+  }
+}
+
 // 署名検証
 function verifyRequest(rawBody, signature, timestamp, publicKey) {
   const message = Buffer.from(timestamp + rawBody);
@@ -113,6 +170,7 @@ function respondJSON(jsonBody) {
   };
 }
 
+// ログ用メッセージ送信
 async function sendLogMessage(body, botToken, channelId) {
   const user = body.member?.user || body.user;
   const username = user?.username || "不明なユーザー";
@@ -132,89 +190,88 @@ async function sendLogMessage(body, botToken, channelId) {
   });
 }
 
-
 // チャンネル権限を変更する関数
 async function modifyUserChannelPermission(channelId, userId, botToken, { allow, deny }) {
-    const url = `https://discord.com/api/v10/channels/${channelId}/permissions/${userId}`;
-    const payload = {
-        type: 1, // メンバータイプ
-        allow: allow.toString(),
-        deny: deny.toString()
-    };
+  const url = `https://discord.com/api/v10/channels/${channelId}/permissions/${userId}`;
+  const payload = {
+    type: 1, // メンバータイプ
+    allow: allow.toString(),
+    deny: deny.toString(),
+  };
 
-    const res = await fetch(url, {
-        method: "PUT", // HTTPメソッドはPUT
-        headers: {
-            "Authorization": `Bot ${botToken}`, // Botトークンを認証に使用
-            "Content-Type": "application/json" // JSON形式を指定
-        },
-        body: JSON.stringify(payload) // ペイロードをJSON文字列に変換
-    });
+  const res = await fetch(url, {
+    method: "PUT", // HTTPメソッドはPUT
+    headers: {
+      Authorization: `Bot ${botToken}`, // Botトークンを認証に使用
+      "Content-Type": "application/json", // JSON形式を指定
+    },
+    body: JSON.stringify(payload), // ペイロードをJSON文字列に変換
+  });
 
-    // リクエスト失敗時のエラーハンドリング
-    if (!res.ok) {
-        console.error("権限の変更に失敗しました:", await res.text());
-        return false;
-    }
-    return true; // 成功時はtrueを返す
+  // リクエスト失敗時のエラーハンドリング
+  if (!res.ok) {
+    console.error("権限の変更に失敗しました:", await res.text());
+    return false;
+  }
+  return true; // 成功時はtrueを返す
 }
 
 // DMチャンネルを作成する関数
 async function createDM(userId, botToken) {
-    const url = 'https://discord.com/api/v10/users/@me/channels'; // DMチャンネル作成用エンドポイント
-    const payload = { recipient_id: userId }; // 受信者のユーザーIDを指定
-    const res = await fetch(url, {
-        method: 'POST', // HTTPメソッドはPOST
-        headers: {
-            "Authorization": `Bot ${botToken}`, // Botトークンを認証に使用
-            "Content-Type": "application/json" // JSON形式を指定
-        },
-        body: JSON.stringify(payload) // ペイロードをJSON文字列に変換
-    });
+  const url = "https://discord.com/api/v10/users/@me/channels"; // DMチャンネル作成用エンドポイント
+  const payload = { recipient_id: userId }; // 受信者のユーザーIDを指定
+  const res = await fetch(url, {
+    method: "POST", // HTTPメソッドはPOST
+    headers: {
+      Authorization: `Bot ${botToken}`, // Botトークンを認証に使用
+      "Content-Type": "application/json", // JSON形式を指定
+    },
+    body: JSON.stringify(payload), // ペイロードをJSON文字列に変換
+  });
 
-    // リクエスト失敗時のエラーハンドリング
-    if (!res.ok) {
-        console.error("DMチャンネルの作成に失敗しました:", await res.text());
-        return null; // 失敗時はnullを返す
-    }
+  // リクエスト失敗時のエラーハンドリング
+  if (!res.ok) {
+    console.error("DMチャンネルの作成に失敗しました:", await res.text());
+    return null; // 失敗時はnullを返す
+  }
 
-    const json = await res.json(); // レスポンスをJSONとして解析
-    return json.id; // 作成したDMチャンネルのIDを返す
+  const json = await res.json(); // レスポンスをJSONとして解析
+  return json.id; // 作成したDMチャンネルのIDを返す
 }
 
 // DMを送信する関数
 async function sendDM(channelId, message, customId, botToken) {
-    const url = `https://discord.com/api/v10/channels/${channelId}/messages`; // メッセージ送信用エンドポイント
-    let bodyData = { content: message }; // メッセージ内容を指定
+  const url = `https://discord.com/api/v10/channels/${channelId}/messages`; // メッセージ送信用エンドポイント
+  let bodyData = { content: message }; // メッセージ内容を指定
 
-    // カスタムIDが指定されている場合、コンポーネントを追加
-    if (customId) {
-        bodyData.components = [
-            {
-                type: 1, // コンポーネントのタイプ（アクション行）
-                components: [
-                    {
-                        type: 2, // ボタンタイプ
-                        style: 1, // ボタンのスタイル（PRIMARY）
-                        label: "復元", // ボタンのラベル
-                        custom_id: customId // ボタンに割り当てるカスタムID
-                    }
-                ]
-            }
-        ];
-    }
+  // カスタムIDが指定されている場合、コンポーネントを追加
+  if (customId) {
+    bodyData.components = [
+      {
+        type: 1, // コンポーネントのタイプ（アクション行）
+        components: [
+          {
+            type: 2, // ボタンタイプ
+            style: 1, // ボタンのスタイル（PRIMARY）
+            label: "復元", // ボタンのラベル
+            custom_id: customId, // ボタンに割り当てるカスタムID
+          },
+        ],
+      },
+    ];
+  }
 
-    const res = await fetch(url, {
-        method: 'POST', // HTTPメソッドはPOST
-        headers: {
-            "Authorization": `Bot ${botToken}`, // Botトークンを認証に使用
-            "Content-Type": "application/json" // JSON形式を指定
-        },
-        body: JSON.stringify(bodyData) // ペイロードをJSON文字列に変換
-    });
+  const res = await fetch(url, {
+    method: "POST", // HTTPメソッドはPOST
+    headers: {
+      Authorization: `Bot ${botToken}`, // Botトークンを認証に使用
+      "Content-Type": "application/json", // JSON形式を指定
+    },
+    body: JSON.stringify(bodyData), // ペイロードをJSON文字列に変換
+  });
 
-    // リクエスト失敗時のエラーハンドリング
-    if (!res.ok) {
-        console.error("DMメッセージの送信に失敗しました:", await res.text());
-    }
+  // リクエスト失敗時のエラーハンドリング
+  if (!res.ok) {
+    console.error("DMメッセージの送信に失敗しました:", await res.text());
+  }
 }
