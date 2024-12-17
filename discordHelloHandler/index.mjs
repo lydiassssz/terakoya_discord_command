@@ -218,4 +218,3 @@ async function sendDM(channelId, message, customId, botToken) {
         console.error("DMメッセージの送信に失敗しました:", await res.text());
     }
 }
-

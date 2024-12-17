@@ -1,3 +1,4 @@
-/node_modules
+discordHelloHandler/node_modules
+makesubjectchannel/node_modules
 *.zip
 .env
