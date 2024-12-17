@@ -64,7 +64,7 @@ async function handleSubjectMakeCommand(body, botToken, logChannelId) {
   }
 
   const payload = {
-    table: "subject",
+    table: "sub",
     track: "new",
     name: name,
   };
