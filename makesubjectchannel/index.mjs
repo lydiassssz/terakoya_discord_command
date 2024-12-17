@@ -1,6 +1,6 @@
 import fetch from "node-fetch";
 import dotenv from "dotenv";
-import { DynamoDBClient, UpdateItemCommand } from "@aws-sdk/client-dynamodb";
+import { DynamoDBClient,DeleteItemCommand, PutItemCommand } from "@aws-sdk/client-dynamodb";
 dotenv.config();
 
 const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN; // Botトークン
@@ -82,27 +82,43 @@ async function createForumChannel(channelName) {
   }
 }
 
+
+
 // DynamoDBのTrackをチャンネルIDに更新する関数
 async function updateTrackWithChannelId(item, channelId) {
-  const params = {
-    TableName: DYNAMO_TABLE_NAME,
-    Key: {
-      Track: { S: item.Track.S }, // キー条件（Track）
-    },
-    UpdateExpression: "SET Track = :channelId",
-    ExpressionAttributeValues: {
-      ":channelId": { S: channelId }, // 新しいTrackの値
-    },
-  };
-
   try {
-    const command = new UpdateItemCommand(params);
-    await dynamoClient.send(command);
+    const deleteParams = {
+      TableName: DYNAMO_TABLE_NAME, // テーブル名
+      Key: {
+        Track: { S: item.Track.S }, // パーティションキー
+        Timestamp: { N: item.Timestamp.N } // ソートキー
+      }
+    };
+
+    const putParams = {
+      TableName: DYNAMO_TABLE_NAME,
+      Item: {
+        Track: { S: channelId }, // 新しいTrackの値（チャンネルID）
+        Timestamp: { N: item.Timestamp.N }, // 既存のソートキーをそのまま使用
+        Name: item.Name, // 他の属性も引き継ぐ
+      }
+    };
+
+    // 既存アイテムを削除
+    console.log("既存アイテムを削除します:", JSON.stringify(deleteParams));
+    await dynamoClient.send(new DeleteItemCommand(deleteParams));
+
+    // 新しいアイテムを挿入
+    console.log("新しいアイテムを挿入します:", JSON.stringify(putParams));
+    await dynamoClient.send(new PutItemCommand(putParams));
+
     console.log(`DynamoDBのTrackをチャンネルID(${channelId})に更新しました。`);
   } catch (error) {
     console.error("DynamoDBの更新中にエラー:", error);
   }
 }
+
+
 
 // Discordのログチャンネルにメッセージを送信する関数
 async function sendLogMessage(message, logChannelId) {
