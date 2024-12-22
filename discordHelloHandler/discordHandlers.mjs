@@ -2,7 +2,7 @@ import { handleSlashCommand } from "./interactions/slashCommands.mjs";
 import { handleComponentInteraction } from "./interactions/componentInteraction.mjs";
 import { handleModalInteraction } from "./interactions/modalInteraction.mjs";
 // ↓ サーバーレスでJSONレスポンスを作るユーティリティを想定 (無い場合は直接returnしてもOK)
-import { respondJSON } from "../utils.mjs";
+import { respondJSON } from "./utils.mjs";
 
 /**
  * body.typeが2ならスラッシュコマンド
