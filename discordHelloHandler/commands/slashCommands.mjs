@@ -1,6 +1,6 @@
 import { respondJSON, sendLogMessage } from "../utils.mjs";
 import { handleHelloCommand } from "./hello.mjs";
-import { handleSubjectMakeCommand } from "./subjectMake.mjs";
+import { handleMakeSubjectCommand } from "./makeSubjects.mjs";
 import { handleRemoveAccessCommand } from "./removeAccess.mjs";
 
 /**
@@ -17,8 +17,8 @@ export async function handleSlashCommand(body) {
     case "hello":
       return await handleHelloCommand(body, DISCORD_BOT_TOKEN, BOT_LOG_CHANNEL_ID);
 
-    case "subject_make":
-      return await handleSubjectMakeCommand(body, DISCORD_BOT_TOKEN, BOT_LOG_CHANNEL_ID);
+    case "make_subject":
+      return await handleMakeSubjectCommand(body, DISCORD_BOT_TOKEN, BOT_LOG_CHANNEL_ID);
 
     case "remove_access":
       return await handleRemoveAccessCommand(body, DISCORD_BOT_TOKEN, BOT_LOG_CHANNEL_ID);

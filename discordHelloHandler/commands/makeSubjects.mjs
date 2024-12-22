@@ -3,7 +3,7 @@ import AWS from "aws-sdk";
 
 const lambda = new AWS.Lambda({ region: "ap-northeast-1" });
 
-export async function handleSubjectMakeCommand(body, botToken, logChannelId) {
+export async function handleMakeSubjectCommand(body, botToken, logChannelId) {
   const name = body.data.options?.find((opt) => opt.name === "name")?.value;
   if (!name) {
     return respondJSON({
@@ -18,7 +18,7 @@ export async function handleSubjectMakeCommand(body, botToken, logChannelId) {
   try {
     await lambda
       .invoke({
-        FunctionName: "arn:aws:lambda:ap-northeast-1:xxx:function:Terakoya_DynamoDB_Write",
+        FunctionName: "arn:aws:lambda:ap-northeast-1:021891619750:function:Terakoya_DynamoDB_Write",
         InvocationType: "Event",
         Payload: JSON.stringify(payload),
       })
