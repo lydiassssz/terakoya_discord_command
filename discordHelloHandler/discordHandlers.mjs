@@ -18,21 +18,17 @@ export async function handlerSlashOrInteraction(body) {
 
   // スラッシュコマンド (type=2)
   if (body.type === 2) {
-    const response = await handleSlashCommand(body);
-    // responseは { type:..., data:... } の形を想定
-    return respondJSON(response);
+    return await handleSlashCommand(body);
   }
 
   // メッセージコンポーネント (type=3) - ボタン、セレクトメニューなど
   if (body.type === 3) {
-    const response = await handleComponentInteraction(body);
-    return respondJSON(response);
+    return await handleComponentInteraction(body);
   }
 
   // モーダル送信 (type=5)
   if (body.type === 5) {
-    const response = await handleModalInteraction(body);
-    return respondJSON(response);
+    return handleModalInteraction(body);
   }
 
   // その他未対応

@@ -5,11 +5,7 @@ import { handleMakeSubjectCommand } from "../commands/makeSubjects.mjs";
 import { handleRemoveAccessCommand } from "../commands/removeAccess.mjs";
 
 // 新しく作ったファイル
-import {
-  handleMakeQuizCommand,
-  handleQuizSelectMenu,
-  handleQuizModalSubmit,
-} from "../commands/makeQuiz.mjs";
+import {handleMakeQuizCommand} from "../commands/makeQuiz.mjs";
 
 export async function handleSlashCommand(body) {
   const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;

@@ -1,3 +1,6 @@
+import { respondJSON } from "../utils.mjs";
+import { sendLogMessage } from "../utils.mjs";
+
 // モーダル送信: "makeQuizModal"
 export async function handleMakeQuizModalSubmit(body, botToken, logChannelId) {
   // custom_id: "makeQuizModal|{channelId}"
