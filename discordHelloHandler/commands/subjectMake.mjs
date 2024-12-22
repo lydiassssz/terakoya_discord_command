@@ -1,4 +1,4 @@
-import { respondJSON, sendLogMessage } from "../utils.js";
+import { respondJSON, sendLogMessage } from "../utils.mjs";
 import AWS from "aws-sdk";
 
 const lambda = new AWS.Lambda({ region: "ap-northeast-1" });

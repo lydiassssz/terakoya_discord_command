@@ -1,2 +1,2 @@
-export { handleSlashCommand } from "./slashCommands.js";
-export { handleComponentInteraction } from "./interactionComponents.js";
+export { handleSlashCommand } from "./slashCommands.mjs";
+export { handleComponentInteraction } from "./interactionComponents.mjs";

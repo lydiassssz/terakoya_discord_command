@@ -1,8 +1,7 @@
-import { respondJSON } from "./utils.js";
 import {
   handleSlashCommand, 
   handleComponentInteraction
-} from "./commands/index.js"; // commands/配下のindex.jsからimport
+} from "./commands/index.mjs"; // commands/配下のindex.jsからimport
 
 /**
  * body.typeが2ならスラッシュコマンド

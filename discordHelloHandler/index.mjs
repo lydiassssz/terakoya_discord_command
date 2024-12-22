@@ -1,5 +1,3 @@
-import AWS from "aws-sdk";
-import nacl from "tweetnacl";
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -8,7 +6,7 @@ import {
   handleComponentInteraction,
   respondJSON,
   verifyRequest,
-} from "./discordHandlers.js";
+} from "./discordHandlers.mjs";
 
 // -------------------------------------------------------
 // Lambdaハンドラ

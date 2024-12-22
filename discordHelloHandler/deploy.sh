@@ -39,8 +39,8 @@ zip -r "$ZIP_FILE" . \
     -x ".git/*" \
     -x ".DS_Store" \
     -x "deploy.sh" \
-    -x "lambda=test.mjs" \
-    -x "local=test.mjs"
+    -x "lambda_test.mjs" \
+    -x "local_test.mjs"
 
 # zipコマンドが成功したか確認
 if [ $? -ne 0 ]; then
