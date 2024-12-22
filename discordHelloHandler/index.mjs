@@ -1,20 +1,11 @@
 import dotenv from "dotenv";
 dotenv.config();
 
-import {
-  handleSlashCommand,
-  handleComponentInteraction,
-  respondJSON,
-  verifyRequest,
-} from "./discordHandlers.mjs";
+import { verifyRequest, respondJSON } from "./utils.js";
+import { handlerSlashOrInteraction } from "./discordHandlers.js";
 
-// -------------------------------------------------------
-// Lambdaハンドラ
-// -------------------------------------------------------
 export const handler = async (event) => {
   const DISCORD_PUBLIC_KEY = process.env.DISCORD_PUBLIC_KEY;
-  const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
-  const BOT_LOG_CHANNEL_ID = process.env.BOT_LOG_CHANNEL_ID;
 
   const signature = event.headers["x-signature-ed25519"];
   const timestamp = event.headers["x-signature-timestamp"];
@@ -27,22 +18,11 @@ export const handler = async (event) => {
 
   const body = JSON.parse(rawBody);
 
-  // Discord相互認証 (PING)
+  // Discord の相互認証 (PING)
   if (body.type === 1) {
-    // type=1 => PING
-    return respondJSON({ type: 1 });
+    return respondJSON({ type: 1 }); // PONG
   }
 
-  // スラッシュコマンド
-  if (body.type === 2) {
-    return await handleSlashCommand(body, DISCORD_BOT_TOKEN, BOT_LOG_CHANNEL_ID);
-  }
-
-  // ボタンなどのコンポーネント押下イベント
-  if (body.type === 3) {
-    return await handleComponentInteraction(body, DISCORD_BOT_TOKEN, BOT_LOG_CHANNEL_ID);
-  }
-
-  // 未対応
-  return { statusCode: 404, body: "未対応のリクエストです" };
+  // スラッシュコマンド or ボタン押下イベントなどを共通で扱う関数へ
+  return await handlerSlashOrInteraction(body);
 };
