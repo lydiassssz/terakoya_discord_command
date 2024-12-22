@@ -48,7 +48,7 @@ fi
 # 2. S3へアップロード
 ############################
 echo "=== Uploading ${ZIP_FILE} to s3://${S3_BUCKET}/${S3_KEY} ==="
-aws s3 cp "$ZIP_FILE" "s3://${S3_BUCKET}/${S3_KEY}" --profile "$AWS_PROFILE"
+aws s3 cp "$ZIP_FILE" "s3://${S3_BUCKET}/${S3_KEY}" --profile "$AWS_PROFILE" --no-cli-pager
 if [ $? -ne 0 ]; then
   echo "[ERROR] S3へのアップロードに失敗しました。"
   exit 1
@@ -74,7 +74,7 @@ aws lambda update-function-code \
   --s3-bucket "$S3_BUCKET" \
   --s3-key "$S3_KEY" \
   --publish \
-  --profile "$AWS_PROFILE"
+  --profile "$AWS_PROFILE"  --no-cli-pager
 if [ $? -ne 0 ]; then
   echo "[ERROR] Lambda関数の更新に失敗しました。"
   exit 1
@@ -83,6 +83,4 @@ fi
 ############################
 # 5. 終了メッセージ (viメッセージが残るのを消すためにclear)
 ############################
-clear  # 画面をクリアしてvi終了時の表示等を消す
-CURRENT_TIME=$(date '+%Y-%m-%d %H:%M:%S')
-echo "=== Deployment complete at ${CURRENT_TIME}! ==="
+echo "=== Deployment complete! ==="
