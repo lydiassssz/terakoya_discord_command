@@ -105,10 +105,9 @@ async function handleSubjectMakeCommand(body, botToken, logChannelId) {
   }
 }
 
-// remove_accessコマンドの処理（復活）
+// remove_accessコマンドの処理
 async function handleRemoveAccessCommand(body, botToken, logChannelId) {
-  // スラッシュコマンドで指定したユーザーIDを取得 (例: /remove_access user: <@12345678>)
-  // 実際には application command の “options” に合わせて修正してください
+  // ユーザーオプション（例: /remove_access user: <@12345678>）からユーザーIDを取得
   const userIdOption = body.data.options?.find((opt) => opt.name === "user");
   if (!userIdOption || !userIdOption.value) {
     return respondJSON({
@@ -118,17 +117,17 @@ async function handleRemoveAccessCommand(body, botToken, logChannelId) {
   }
   const userId = userIdOption.value;
 
-  // コマンドが実行されたチャンネルIDを取得
-  // もし特定のチャンネルをスラッシュコマンドで指定したければ別途オプションを追加してください
+  // 実行されたチャンネルIDを取得（＝このチャンネルに対して権限を操作）
   const channelId = body.channel_id;
 
-  // ここでVIEW_CHANNELの許可を0に、denyをVIEW_CHANNELにすることで閲覧権限を剥奪
   try {
+    // VIEW_CHANNEL のみをdenyにすることで閲覧権限を剥奪
     const success = await modifyUserChannelPermission(channelId, userId, botToken, {
       allow: 0,
       deny: VIEW_CHANNEL,
     });
 
+    // コマンド実行ログを送信（ログチャンネルへの書き込みなど）
     await sendLogMessage(body, botToken, logChannelId);
 
     if (!success) {
@@ -138,6 +137,7 @@ async function handleRemoveAccessCommand(body, botToken, logChannelId) {
       });
     }
 
+    // 正常完了メッセージ
     return respondJSON({
       type: 4,
       data: {
