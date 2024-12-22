@@ -34,10 +34,46 @@ export async function sendLogMessage(body, botToken, channelId) {
   const user = body.member?.user || body.user;
   const username = user?.username || "不明なユーザー";
   const discriminator = user?.discriminator || "0000";
-  const commandName = body.data?.name || "(不明)";
 
-  const logMessage = `**コマンド実行**\nユーザー: \`${username}#${discriminator}\`\nコマンド: \`/${commandName}\``;
+  let logMessage = "";
 
+  switch (body.type) {
+    case 2: {
+      // Slash Command
+      const commandName = body.data?.name || "(不明)";
+      logMessage = `**スラッシュコマンド実行**\nユーザー: \`${username}#${discriminator}\`\nコマンド: \`/${commandName}\``;
+      break;
+    }
+    case 3: {
+      // ボタン or セレクトメニュー
+      const customId = body.data?.custom_id || "(不明)";
+      let detail = "";
+      if (body.data.values) {
+        // セレクトメニューの場合
+        detail = `\n選択値: ${body.data.values.join(", ")}`;
+      }
+      logMessage = `**コンポーネント操作**\nユーザー: \`${username}#${discriminator}\`\ncustom_id: \`${customId}\`${detail}`;
+      break;
+    }
+    case 5: {
+      // モーダル
+      const customId = body.data?.custom_id || "(不明)";
+      // モーダルのフィールド取得 (複数のTextInputがある場合を想定)
+      const inputValues = body.data.components
+        ?.flatMap(row => row.components)
+        ?.map(c => `\`${c.custom_id}\`: ${c.value}`)
+        .join("\n");
+      logMessage = `**モーダル送信**\nユーザー: \`${username}#${discriminator}\`\ncustom_id: \`${customId}\`\n${inputValues}`;
+      break;
+    }
+    default: {
+      // その他 (Ping(type=1) など)
+      logMessage = `**不明 or 未実装のインタラクション** (type=${body.type})\nユーザー: \`${username}#${discriminator}\``;
+      break;
+    }
+  }
+
+  // ---- 送信 ----
   const url = `https://discord.com/api/v10/channels/${channelId}/messages`;
   await fetch(url, {
     method: "POST",

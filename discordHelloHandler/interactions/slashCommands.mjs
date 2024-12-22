@@ -1,13 +1,13 @@
+// slashCommands.mjs
 import { respondJSON, sendLogMessage } from "../utils.mjs";
-import { handleHelloCommand } from "./hello.mjs";
-import { handleMakeSubjectCommand } from "./makeSubjects.mjs";
-import { handleRemoveAccessCommand } from "./removeAccess.mjs";
+import { handleHelloCommand } from "../commands/hello.mjs";
+import { handleMakeSubjectCommand } from "../commands/makeSubjects.mjs";
+import { handleRemoveAccessCommand } from "../commands/removeAccess.mjs";
 
-/**
- * スラッシュコマンド受け取り → コマンド名で振り分け
- */
+// 新しく作ったファイル
+import {handleMakeQuizCommand} from "../commands/makeQuiz.mjs";
+
 export async function handleSlashCommand(body) {
-  // 環境変数やログチャンネルIDはここで取得
   const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
   const BOT_LOG_CHANNEL_ID = process.env.BOT_LOG_CHANNEL_ID;
 
@@ -22,6 +22,10 @@ export async function handleSlashCommand(body) {
 
     case "remove_access":
       return await handleRemoveAccessCommand(body, DISCORD_BOT_TOKEN, BOT_LOG_CHANNEL_ID);
+
+    case "make_quiz":
+      // スラッシュコマンド実行時
+      return await handleMakeQuizCommand(body, DISCORD_BOT_TOKEN, BOT_LOG_CHANNEL_ID);
 
     default:
       // 未対応コマンド
