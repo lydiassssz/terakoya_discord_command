@@ -1,7 +1,5 @@
-import {
-  handleSlashCommand, 
-  handleComponentInteraction
-} from "./commands/index.mjs"; // commands/配下のindex.jsからimport
+import {handleSlashCommand} from "./utils/slashCommands.mjs";
+import {handleComponentInteraction} from "./utils/interactionComponents.mjs";
 
 /**
  * body.typeが2ならスラッシュコマンド

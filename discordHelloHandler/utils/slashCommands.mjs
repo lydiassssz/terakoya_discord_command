@@ -1,7 +1,7 @@
 import { respondJSON, sendLogMessage } from "../utils.mjs";
-import { handleHelloCommand } from "./hello.mjs";
-import { handleSubjectMakeCommand } from "./subjectMake.mjs";
-import { handleRemoveAccessCommand } from "./removeAccess.mjs";
+import { handleHelloCommand } from "../commands/hello.mjs";
+import { handleSubjectMakeCommand } from "../commands/subjectMake.mjs";
+import { handleRemoveAccessCommand } from "../commands/removeAccess.mjs";
 
 /**
  * スラッシュコマンド受け取り → コマンド名で振り分け
