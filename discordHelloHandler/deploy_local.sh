@@ -24,6 +24,10 @@ S3_KEY="discordHelloHandler.zip"
 # ZIPファイルの出力先
 ZIP_FILE="discordHelloHandler.zip"
 
+# AWS CLIのプロファイル名(必要に応じて)
+AWS_PROFILE="s3AndLambdaAccess"
+# ↑特に切り替える必要がなければ default のままでもよい。 --profile 自体を削除してもOK
+
 ############################
 # 1. ZIP圧縮
 ############################
@@ -44,7 +48,7 @@ fi
 # 2. S3へアップロード
 ############################
 echo "=== Uploading ${ZIP_FILE} to s3://${S3_BUCKET}/${S3_KEY} ==="
-aws s3 cp "$ZIP_FILE" "s3://${S3_BUCKET}/${S3_KEY}" --no-cli-pager
+aws s3 cp "$ZIP_FILE" "s3://${S3_BUCKET}/${S3_KEY}" --profile "$AWS_PROFILE" --no-cli-pager
 if [ $? -ne 0 ]; then
   echo "[ERROR] S3へのアップロードに失敗しました。"
   exit 1
@@ -70,7 +74,7 @@ aws lambda update-function-code \
   --s3-bucket "$S3_BUCKET" \
   --s3-key "$S3_KEY" \
   --publish \
-  --no-cli-pager
+  --profile "$AWS_PROFILE"  --no-cli-pager
 if [ $? -ne 0 ]; then
   echo "[ERROR] Lambda関数の更新に失敗しました。"
   exit 1
