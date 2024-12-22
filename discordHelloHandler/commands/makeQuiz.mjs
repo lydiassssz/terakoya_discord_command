@@ -60,6 +60,9 @@ export async function handleMakeQuizCommand(body, botToken, logChannelId) {
     max_values: 1,
   };
 
+
+  await sendLogMessage(body, botToken, logChannelId);
+
   // -----------------------
   // 1-5) エフェメラルメッセージとして返信
   // -----------------------
