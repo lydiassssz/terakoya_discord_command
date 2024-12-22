@@ -1,8 +1,8 @@
 import dotenv from "dotenv";
 dotenv.config();
 
-import { verifyRequest, respondJSON } from "./utils.js";
-import { handlerSlashOrInteraction } from "./discordHandlers.js";
+import { verifyRequest, respondJSON } from "./utils.mjs";
+import { handlerSlashOrInteraction } from "./discordHandlers.mjs";
 
 export const handler = async (event) => {
   const DISCORD_PUBLIC_KEY = process.env.DISCORD_PUBLIC_KEY;
