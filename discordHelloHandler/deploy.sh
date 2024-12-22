@@ -1,13 +1,11 @@
 #!/bin/bash
 #
-# deploy.sh (実行権限を付与して使います)
+# deploy.sh
 #   1. 対象フォルダをZIP圧縮
 #   2. S3にアップロード
 #   3. Lambdaを更新
-#
-# 使い方:
-#   bash deploy.sh
-#     (あるいは ./deploy.sh として実行できるように chmod +x しておく)
+#   4. ZIPファイル削除
+#   5. 終了時に clear + 日時ログ表示
 #
 
 ############################
@@ -20,21 +18,20 @@ FUNCTION_NAME="discordHelloHandler"
 # S3バケット名 (zipをアップロードする先)
 S3_BUCKET="terakoyalambda"
 
-# S3内のオブジェクトキー (パス) ※フォルダ構造にしたい場合は "some/folder/function.zip" など
+# S3内のオブジェクトキー (パス)
 S3_KEY="discordHelloHandler.zip"
 
 # ZIPファイルの出力先
 ZIP_FILE="discordHelloHandler.zip"
 
 # AWS CLIのプロファイル名(必要に応じて)
-AWS_PROFILE="s3AndLambdaAccess"  
-# ↑特に切り替える必要なければ、 default のままか --profile 自体を削除してもOK
+AWS_PROFILE="s3AndLambdaAccess"
+# ↑特に切り替える必要がなければ default のままでもよい。 --profile 自体を削除してもOK
 
 ############################
 # 1. ZIP圧縮
 ############################
 echo "=== Zipping source code ==="
-# 下記例では、node_modulesなど含めずにzipを作成したいときは -x オプションで除外してください
 zip -r "$ZIP_FILE" . \
     -x ".git/*" \
     -x ".DS_Store" \
@@ -42,7 +39,6 @@ zip -r "$ZIP_FILE" . \
     -x "lambda=test.mjs" \
     -x "local=test.mjs"
 
-# zipコマンドが成功したか確認
 if [ $? -ne 0 ]; then
   echo "[ERROR] zipコマンドに失敗しました。"
   exit 1
@@ -59,7 +55,18 @@ if [ $? -ne 0 ]; then
 fi
 
 ############################
-# 3. Lambdaの更新
+# 3. アップロード成功後: ZIPファイル削除
+############################
+echo "=== Removing local ZIP file: ${ZIP_FILE} ==="
+rm -f "$ZIP_FILE"
+if [ $? -ne 0 ]; then
+  echo "[ERROR] ZIPファイルの削除に失敗しました。"
+  # 必要なら exit するかどうかを検討
+  # exit 1
+fi
+
+############################
+# 4. Lambdaの更新
 ############################
 echo "=== Updating Lambda function code ==="
 aws lambda update-function-code \
@@ -73,4 +80,9 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
-echo "=== Deployment complete! ==="
+############################
+# 5. 終了メッセージ (viメッセージが残るのを消すためにclear)
+############################
+clear  # 画面をクリアしてvi終了時の表示等を消す
+CURRENT_TIME=$(date '+%Y-%m-%d %H:%M:%S')
+echo "=== Deployment complete at ${CURRENT_TIME}! ==="
