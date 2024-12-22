@@ -189,9 +189,6 @@ export async function handleQuizModalSubmit(body, botToken, logChannelId) {
   // さらに "問題情報" を #bot_log に投稿
   const logContent = `**[make_quiz]**\n- 選択チャンネル: <#${selectedChannelId}>\n- 問題番号: ${quizNumber}\n- 問題文:\n${quizText}`;
 
-  // respondJSON ではなく、botに対してチャンネル送信APIを呼ぶ例(仮のsendMessage関数)：
-  await sendMessageToChannel(botToken, logChannelId, logContent);
-
   // -----------------------
   // 3-2) ユーザーへの返信 (エフェメラル)
   // -----------------------
@@ -238,17 +235,4 @@ async function getForumChannelsInCategory(guildId, categoryId, botToken) {
     { id: "999999999999999998", name: "フォーラムB" },
     { id: "999999999999999999", name: "フォーラムC" },
   ];
-}
-
-/**
- * #bot_logチャンネルなどにメッセージ投稿する仮の関数
- * 実際には /channels/{channel.id}/messages をPOST
- */
-async function sendMessageToChannel(botToken, channelId, content) {
-  // fetch() もしくは axios などで Discord API を呼ぶ
-  // POST /channels/{channelId}/messages
-  // headers: { Authorization: `Bot ${botToken}` }
-  // body: { content }
-  // ...のように実装
-  console.log(`[DEBUG] sendMessageToChannel -> #${channelId}, content: ${content}`);
 }
