@@ -1,6 +1,6 @@
 // modalInteraction.mjs
 import { respondJSON, sendLogMessage } from "../utils.mjs";
-import { handleMakeQuizModalSubmit } from "../modals/makeQuizModal.mjs";
+import { handleMakeQuizModalSubmit } from "../modals/makeQuizModalHandler.mjs";
 
 export async function handleModalInteraction(body) {
   const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
