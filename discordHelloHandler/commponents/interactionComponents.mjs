@@ -1,4 +1,4 @@
-import { respondJSON, sendLogMessage, modifyUserChannelPermission, createDM, sendDM } from "../utils.js";
+import { respondJSON, sendLogMessage, modifyUserChannelPermission, createDM, sendDM } from "../utils.mjs";
 
 /**
  * ボタンなどのコンポーネント押下を処理

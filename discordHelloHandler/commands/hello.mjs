@@ -1,4 +1,4 @@
-import { respondJSON, sendLogMessage } from "../utils.js";
+import { respondJSON, sendLogMessage } from "../utils.mjs";
 
 export async function handleHelloCommand(body, botToken, logChannelId) {
   const user = body.member?.user || body.user;

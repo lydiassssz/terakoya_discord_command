@@ -5,6 +5,7 @@
     "discord.js": "^14.16.3",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
+    "node-fetch": "^3.3.2",
     "tweetnacl": "^1.0.3"
   },
   "name": "terakoya_discord_command",

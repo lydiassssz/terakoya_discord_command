@@ -6,7 +6,7 @@ import {
     createDM,
     sendDM,
     VIEW_CHANNEL
-  } from "../utils.js";
+  } from "../utils.mjs";
   
   export async function handleRemoveAccessCommand(body, botToken, logChannelId) {
     const channelId = body.channel_id;

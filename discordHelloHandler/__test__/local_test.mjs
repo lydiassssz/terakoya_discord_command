@@ -1,5 +1,5 @@
 import express from "express";
-import { handler } from "./index.mjs"; // Lambda関数をインポート
+import { handler } from "../index.mjs"; // Lambda関数をインポート
 
 const app = express();
 const PORT = 3000;
