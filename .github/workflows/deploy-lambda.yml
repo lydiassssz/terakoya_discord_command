@@ -20,7 +20,7 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      # 3. zip コマンド等が必要ならインストール (AWS CLIがデフォルトで入っている ubuntu-latest なら多分OK)
+      # 3. zip コマンド等が必要ならインストール
       - name: Install zip
         run: sudo apt-get update && sudo apt-get install -y zip
 
@@ -28,10 +28,15 @@ jobs:
       - name: Deploy all
         run: |
           # すべてのdeploy.shを探し、各ファイルに対して:
-          #   1) 実行権限を付与
-          #   2) 実行
+          #   1) ディレクトリに移動
+          #   2) 実行権限を付与
+          #   3) 実行
           for script in $(find . -name 'deploy.sh'); do
             echo "Found $script"
-            chmod +x "$script"
-            "$script"
+            (
+              # サブシェルで移動することで元のディレクトリには影響を与えない
+              cd "$(dirname "$script")"
+              chmod +x deploy.sh
+              ./deploy.sh
+            )
           done
