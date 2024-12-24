@@ -8,25 +8,30 @@
 #   5. 終了時に clear + 日時ログ表示
 #
 
+# AWS CLIのプロファイル名(必要に応じて)
+AWS_PROFILE="s3AndLambdaAccess"
+# ↑特に切り替える必要がなければ default のままでもよい。 --profile 自体を削除してもOK
+
 ############################
 # 設定値
 ############################
 
+# ディレクトリ名（Lambda関数名やファイル名に流用）
+DIR_NAME=$(basename "$(pwd)")
+
 # Lambda関数名 (arn ではなく関数名)
-FUNCTION_NAME="discordHelloHandler"
+FUNCTION_NAME="$DIR_NAME"
 
 # S3バケット名 (zipをアップロードする先)
 S3_BUCKET="terakoyalambda"
 
-# S3内のオブジェクトキー (パス)
-S3_KEY="discordHelloHandler.zip"
+# S3内のオブジェクトキー (パス) → ディレクトリ名を使う
+S3_KEY="${DIR_NAME}.zip"
 
-# ZIPファイルの出力先
-ZIP_FILE="discordHelloHandler.zip"
+# ZIPファイルの出力先 → ディレクトリ名を使う
+ZIP_FILE="${DIR_NAME}.zip"
 
-# AWS CLIのプロファイル名(必要に応じて)
-AWS_PROFILE="s3AndLambdaAccess"
-# ↑特に切り替える必要がなければ default のままでもよい。 --profile 自体を削除してもOK
+
 
 ############################
 # 1. ZIP圧縮
