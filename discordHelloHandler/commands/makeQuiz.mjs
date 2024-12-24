@@ -1,5 +1,10 @@
 // makeQuiz.mjs
 import { respondJSON, sendLogMessage } from "../utils.mjs";
+import dotenv from "dotenv";
+dotenv.config();
+
+// ▼ DynamoDB 用の依存モジュールを追加
+import { DynamoDBClient, ScanCommand } from "@aws-sdk/client-dynamodb";
 
 /**
  * 1) スラッシュコマンド '/make_quiz' 実行時
@@ -9,15 +14,10 @@ export async function handleMakeQuizCommand(body, botToken, logChannelId) {
   const channelId = body.channel_id; // コマンドを打ったチャンネル
   const guildId = body.guild_id;
 
-  // カテゴリID(フォーラムが含まれる) - ハードコーディング例
-  const TARGET_CATEGORY_ID = "1314494964779978784";
+  // 環境変数からカテゴリIDを取得
+  const TARGET_CATEGORY_ID = process.env.HAKOBUNE_CATEGORY_ID;
 
-  // -----------------------
-  // 1-1) フォーラムチャンネル一覧を取得 (utils.mjs等でREST APIを叩く実装が必要)
-  // -----------------------
-  // 例: すべてのチャンネルを取得し、フォーラムかつ parent_id === TARGET_CATEGORY_ID を抽出
-  //     ここでは「仮の」関数例で置いておきます
-  const forumChannels = await getForumChannelsInCategory(guildId, TARGET_CATEGORY_ID, botToken);
+  const forumChannels = await getForumChannelsInCategory();
   if (!forumChannels || forumChannels.length === 0) {
     return respondJSON({
       type: 4,
@@ -28,9 +28,6 @@ export async function handleMakeQuizCommand(body, botToken, logChannelId) {
     });
   }
 
-  // -----------------------
-  // 1-2) もしコマンドを打ったチャンネルが該当カテゴリ内のフォーラムなら、それをデフォルト選択
-  // -----------------------
   let defaultChannelId = null;
   const found = forumChannels.find((ch) => ch.id === channelId);
   if (found) {
@@ -222,17 +219,26 @@ function extractModalFields(components = []) {
   return fields;
 }
 
-/**
- * カテゴリID指定でフォーラムチャンネル一覧を取る(仮実装)
- * 実際には Discord API を叩く or キャッシュを使うなどする
- */
-async function getForumChannelsInCategory(guildId, categoryId, botToken) {
-  // 例) fetchGuildChannels(guildId, botToken) → すべてのチャンネルを取得
-  //     filter(ch => ch.type===15(フォーラム) && ch.parent_id===categoryId)
-  // ここでは仮データで例示
-  return [
-    { id: "999999999999999997", name: "フォーラムA" },
-    { id: "999999999999999998", name: "フォーラムB" },
-    { id: "999999999999999999", name: "フォーラムC" },
-  ];
+async function getForumChannelsInCategory() {
+  // 1) DynamoDB クライアントを生成
+  const ddbClient = new DynamoDBClient({});
+
+  // 2) Scan で全件取得 (本番ではなるべく Query で絞り込むか、必要に応じて FilterExpression を使うのが望ましい)
+  const params = {
+    TableName: process.env.DYNAMODB_TABLE_NAME,
+  };
+  const data = await ddbClient.send(new ScanCommand(params));
+
+  // 取得した Items から、フォーラムID (Track) とフォーラム名 (Name) を使ってフォーラムチャンネルリストを構築
+const forumChannels = (data.Items || []).map((item) => {
+  const forumId = item.Track.S; // フォーラムID
+  const forumName = item.Name.S; // フォーラム名
+
+  return {
+    id: forumId,
+    name: forumName,
+  };
+});
+
+  return forumChannels;
 }
