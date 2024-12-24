@@ -1,46 +1,29 @@
 // makeQuizComponent.mjs
-import { respondJSON, sendLogMessage } from "../utils.mjs";
+import { respondJSON } from "../utils.mjs";
 
 /**
  * セレクトメニュー "quizSelectMenu" が押されたとき
  *  -> モーダルを表示 (type:9)
  */
-export async function handleQuizSelectMenu(body, botToken, logChannelId) {
-  // ユーザーが選択したチャンネルID (1つだけ想定)
+export async function handleQuizSelectMenu(body) {
   const selectedChannelId = body.data.values?.[0];
   if (!selectedChannelId) {
     return respondJSON({
       type: 4,
       data: {
         content: "チャンネルが選択されていません。",
-        flags: 64, // エフェメラル
+        flags: 64,
       },
     });
   }
 
-  // ボットログには "セレクトメニューが押された" という情報を残してもOK
-  await sendLogMessage(body, botToken, logChannelId);
-
-  // (例) モーダルを返す
   return respondJSON({
     type: 9, // MODAL
     data: {
-      custom_id: `makeQuizModal|${selectedChannelId}`, 
-      title: "クイズ情報入力",
+      // ここで custom_id にチャンネルIDを埋め込む
+      custom_id: `makeQuizModal|${selectedChannelId}`,
+      title: "クイズ情報入力フォーム",
       components: [
-        {
-          type: 1, // ActionRow
-          components: [
-            {
-              type: 4, // TextInput
-              custom_id: "quizNumber",
-              label: "問題番号",
-              style: 1, // SHORT
-              placeholder: "例: Q1, 1 など",
-              required: true,
-            },
-          ],
-        },
         {
           type: 1, // ActionRow
           components: [
@@ -49,7 +32,9 @@ export async function handleQuizSelectMenu(body, botToken, logChannelId) {
               custom_id: "quizText",
               label: "問題文",
               style: 2, // PARAGRAPH
-              placeholder: "問題文を入力",
+              min_length: 1,
+              max_length: 2000,
+              placeholder: "ここに問題文を入力",
               required: true,
             },
           ],
