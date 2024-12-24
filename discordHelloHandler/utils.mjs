@@ -1,5 +1,7 @@
 import fetch from "node-fetch";
 import nacl from "tweetnacl";
+import { DynamoDBClient, ScanCommand } from "@aws-sdk/client-dynamodb";
+
 
 // -------------------------------------------------
 // 定数
@@ -215,4 +217,28 @@ export async function sendDM(channelId, message, customId, botToken) {
   if (!res.ok) {
     console.error("DMメッセージの送信に失敗:", await res.text());
   }
+}
+
+export async function getForumChannelsInCategory(TableName) {
+  // 1) DynamoDB クライアントを生成
+  const ddbClient = new DynamoDBClient({});
+
+  // 2) Scan で全件取得 (本番ではなるべく Query で絞り込むか、必要に応じて FilterExpression を使うのが望ましい)
+  const params = {
+    TableName: TableName,
+  };
+  const data = await ddbClient.send(new ScanCommand(params));
+
+  // 取得した Items から、フォーラムID (Track) とフォーラム名 (Name) を使ってフォーラムチャンネルリストを構築
+const forumChannels = (data.Items || []).map((item) => {
+  const forumId = item.Track.S; // フォーラムID
+  const forumName = item.Name.S; // フォーラム名
+
+  return {
+    id: forumId,
+    name: forumName,
+  };
+});
+
+  return forumChannels;
 }
