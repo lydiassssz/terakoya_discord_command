@@ -29,6 +29,21 @@ export async function handleQuizSelectMenu(body) {
           components: [
             {
               type: 4, // TextInput
+              custom_id: "quizTitle",
+              label: "タイトル",
+              style: 2, // PARAGRAPH
+              min_length: 1,
+              max_length: 100,
+              placeholder: "問題番号や問題のタイトルを入力",
+              required: true,
+            },
+          ],
+        },
+        {
+          type: 1, // ActionRow
+          components: [
+            {
+              type: 4, // TextInput
               custom_id: "quizText",
               label: "問題文",
               style: 2, // PARAGRAPH

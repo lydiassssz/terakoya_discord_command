@@ -20,7 +20,7 @@ export async function handleComponentInteraction(body) {
   if (customId === "quizSelectMenu") {
     // ここではモーダルを返す or 何らかの返信を返す可能性があるので
     // 返り値をそのままreturn する
-    return await handleQuizSelectMenu(body, DISCORD_BOT_TOKEN, BOT_LOG_CHANNEL_ID);
+    return await handleQuizSelectMenu(body);
   }
 
   // ここまでで該当がなければ、とりあえずACKだけ返す
