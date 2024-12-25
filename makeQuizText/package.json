@@ -11,6 +11,7 @@
   "license": "ISC",
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.716.0",
-    "dotenv": "^16.4.7"
+    "dotenv": "^16.4.7",
+    "node-fetch": "^3.3.2"
   }
 }
