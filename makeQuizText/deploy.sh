@@ -36,7 +36,6 @@ zip -r "$ZIP_FILE" . \
     -x ".DS_Store" \
     -x "deploy*.sh" \
     -x "__test__/*" \
-
 if [ $? -ne 0 ]; then
   echo "[ERROR] zipコマンドに失敗しました。"
   exit 1
