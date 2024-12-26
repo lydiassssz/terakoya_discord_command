@@ -1,10 +1,11 @@
 #!/bin/bash
 #
 # deploy.sh
+#   0. npm install
 #   1. 対象フォルダをZIP圧縮
 #   2. S3にアップロード
-#   3. Lambdaを更新
-#   4. ZIPファイル削除
+#   3. ZIPファイル削除
+#   4. Lambdaを更新
 #   5. 終了時に clear + 日時ログ表示
 #
 
@@ -28,6 +29,16 @@ S3_KEY="${DIR_NAME}.zip"
 ZIP_FILE="${DIR_NAME}.zip"
 
 ############################
+# 0. npm install
+############################
+echo "=== Running npm install ==="
+npm install
+if [ $? -ne 0 ]; then
+  echo "[ERROR] npm install に失敗しました。"
+  exit 1
+fi
+
+############################
 # 1. ZIP圧縮
 ############################
 echo "=== Zipping source code ==="
@@ -35,7 +46,7 @@ zip -r "$ZIP_FILE" . \
     -x ".git/*" \
     -x ".DS_Store" \
     -x "deploy*.sh" \
-    -x "__test__/*" \
+    -x "__test__/*"
 
 if [ $? -ne 0 ]; then
   echo "[ERROR] zipコマンドに失敗しました。"
@@ -73,12 +84,13 @@ aws lambda update-function-code \
   --s3-key "$S3_KEY" \
   --publish \
   --no-cli-pager
+
 if [ $? -ne 0 ]; then
   echo "[ERROR] Lambda関数の更新に失敗しました。"
   exit 1
 fi
 
 ############################
-# 5. 終了メッセージ (viメッセージが残るのを消すためにclear)
+# 5. 終了メッセージ
 ############################
 echo "=== Deployment complete! ==="
