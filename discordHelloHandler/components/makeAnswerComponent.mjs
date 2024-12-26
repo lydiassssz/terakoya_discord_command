@@ -46,7 +46,7 @@ export function handleAnswerQuizButton(body) {
                 // Text Input
                 type: 4,
                 custom_id: "quiz_answer",
-                style: 1, // 短文(1) or 長文(2)
+                style: 2,
                 label: "回答を記入してください",
                 required: true,
                 min_length: 1,
