@@ -2,6 +2,7 @@
 import { respondJSON } from "../utils.mjs";
 import { handleRevertAccessButton } from "../components/revertAccessComponent.mjs";
 import { handleQuizSelectMenu } from "../components/makeQuizComponent.mjs";
+import { handleAnswerQuizButton } from "../components/answerQuizComponent.mjs";
 
 export async function handleComponentInteraction(body) {
   const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
@@ -21,6 +22,12 @@ export async function handleComponentInteraction(body) {
     // ここではモーダルを返す or 何らかの返信を返す可能性があるので
     // 返り値をそのままreturn する
     return await handleQuizSelectMenu(body);
+  }
+
+  if (customId === "answer_quiz") {
+    // ここではモーダルを返す or 何らかの返信を返す可能性があるので
+    // 返り値をそのままreturn する
+    return await handleAnswerQuizButton(body);
   }
 
   // ここまでで該当がなければ、とりあえずACKだけ返す
