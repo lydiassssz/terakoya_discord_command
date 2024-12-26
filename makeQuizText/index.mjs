@@ -6,6 +6,9 @@ import {
 } from "@aws-sdk/client-dynamodb"; // UpdateItemCommand を追加
 dotenv.config();
 
+
+// todo 何だこのコードは。何をしているのかわからない。
+
 //================================================
 // 環境変数
 //================================================
@@ -70,6 +73,7 @@ export const handler = async (event) => {
         };
 
         // fetch で新規スレッド＋メッセージを作成
+        let newMessageId = null;
         {
           const payload = {
             name: forumThreadName,
@@ -95,7 +99,10 @@ export const handler = async (event) => {
             console.error("フォーラムスレッド作成に失敗:", errorText);
             continue; // 次のレコードへ
           }
-          console.log("フォーラムスレッドを作成しました。");
+
+          const data = await response.json();
+          newMessageId = data.id;
+          console.log("フォーラムスレッドを作成しました。メッセージID:", newMessageId);
         }
 
         //================================================
@@ -152,10 +159,11 @@ export const handler = async (event) => {
               Timestamp: { S: Timestamp }
 
             },
-            UpdateExpression: "SET channelId = :cId, channelName = :cName",
+            UpdateExpression: "SET channelId = :cId, channelName = :cName, quizId = :qId",
             ExpressionAttributeValues: {
               ":cId":  { S: newChannelId },
-              ":cName": { S: newChannelNameResponse }
+              ":cName": { S: newChannelNameResponse },
+              ":qId": { S: newMessageId }
             }
           };
 

@@ -27,8 +27,6 @@ export async function handleQuizModalSubmit(body, botToken, logChannelId) {
       Timestamp: { S: now.toString() },        // 送信された時刻(ミリ秒)
       QuizTitle:  { S: quizTitle },             // モーダルで入力された問題文
       QuizText:   { S: quizText },              // モーダルで入力された問題文
-      // 必要に応じて他の情報を追加
-      // QuizNumber: { S: quizNumber }, など
     },
   };
 
