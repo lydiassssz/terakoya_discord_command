@@ -2,7 +2,7 @@
 import { respondJSON } from "../utils.mjs";
 import { handleRevertAccessButton } from "../components/revertAccessComponent.mjs";
 import { handleQuizSelectMenu } from "../components/makeQuizComponent.mjs";
-import { handleAnswerQuizButton } from "../components/answerQuizComponent.mjs";
+import { handleAnswerQuizButton } from "../components/makeAnswerComponent.mjs";
 
 export async function handleComponentInteraction(body) {
   const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
