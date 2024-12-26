@@ -12,6 +12,10 @@ export async function handleModalInteraction(body) {
     return await handleQuizModalSubmit(body, DISCORD_BOT_TOKEN, BOT_LOG_CHANNEL_ID);
   }
 
+  if (customId.startsWith("quiz_answer")) {
+    return await handleAnswerModalSubmit(body, DISCORD_BOT_TOKEN, BOT_LOG_CHANNEL_ID);
+  }
+
   // 何も該当しなければACKで終了
   return respondJSON({ type: 6 });
 }
