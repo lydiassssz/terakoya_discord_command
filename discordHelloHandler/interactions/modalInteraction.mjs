@@ -1,6 +1,7 @@
 // modalInteraction.mjs
 import { respondJSON } from "../utils.mjs";
 import { handleQuizModalSubmit } from "../modals/makeQuizModalHandler.mjs";
+import { handleAnswerModalSubmit } from "../modals/makeAnswerModalHandler.mjs";
 
 export async function handleModalInteraction(body) {
   const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
@@ -12,7 +13,7 @@ export async function handleModalInteraction(body) {
     return await handleQuizModalSubmit(body, DISCORD_BOT_TOKEN, BOT_LOG_CHANNEL_ID);
   }
 
-  if (customId.startsWith("quiz_answer")) {
+  if (customId.startsWith("quiz_modal")) {
     return await handleAnswerModalSubmit(body, DISCORD_BOT_TOKEN, BOT_LOG_CHANNEL_ID);
   }
 
