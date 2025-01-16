@@ -55,7 +55,7 @@ export const handler = async (event) => {
           // 2. 解答チャンネルにメッセージを投稿
         const postUrl = `https://discord.com/api/v10/channels/${channelId}/messages`;
         const postBody = {
-          content: `【新規解答】\n回答者: \n\`\`\`\n${answerContent}\n\`\`\``,
+          content: `【新規解答】\n\`\`\`\n${answerContent}\n\`\`\``,
         };
 
         await fetch(postUrl, {
