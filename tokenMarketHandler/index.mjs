@@ -7,6 +7,34 @@ const dynamoDB = new AWS.DynamoDB.DocumentClient();
 
 // テーブル名
 const TABLE_NAME = process.env.DYNAMODB_TOKEN_TABLE_NAME;
+const ERROR_LOG_TABLE_NAME = 'Terakoya_error_log';
+
+/**
+ * エラーをログとして記録する関数
+ * @param {string} user_id - ユーザーID
+ * @param {string} error_message - エラー内容
+ * @param {object} input_data - 入力データ
+ */
+const log_error = async (user_id, error_message, input_data) => {
+    const timestamp = new Date().toISOString();
+
+    const params = {
+        TableName: ERROR_LOG_TABLE_NAME,
+        Item: {
+            timestamp,
+            user_id,
+            error_message,
+            input_data
+        }
+    };
+
+    try {
+        await dynamoDB.put(params).promise();
+        console.error('Error logged successfully');
+    } catch (error) {
+        console.error('Failed to log error:', error);
+    }
+};
 
 /**
  * トークンを取引する関数
@@ -57,6 +85,7 @@ export const transact_token = async (user_id, amount, description = "Unknown") =
         return { message: `Token transaction successful`, updatedTokens: newBalance };
     } catch (error) {
         console.error('Error in token transaction:', error);
+        await log_error(user_id, error.message, { user_id, amount, description });
         throw new Error(error.message);
     }
 };
@@ -84,6 +113,7 @@ export const check_token_balance = async (user_id) => {
         return { message: 'Token balance retrieved', current_tokens: currentBalance };
     } catch (error) {
         console.error('Error retrieving token balance:', error);
+        await log_error(user_id, error.message, { user_id });
         throw new Error('Could not retrieve token balance');
     }
 };
@@ -115,6 +145,7 @@ export const handler = async (event) => {
                 };
         }
     } catch (error) {
+        await log_error(user_id, error.message, { action, user_id, amount, description });
         return {
             statusCode: 500,
             body: JSON.stringify({ message: error.message })
