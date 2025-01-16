@@ -145,7 +145,6 @@ export const handler = async (event) => {
                 };
         }
     } catch (error) {
-        await log_error(user_id, error.message, { action, user_id, amount, description });
         return {
             statusCode: 500,
             body: JSON.stringify({ message: error.message })
