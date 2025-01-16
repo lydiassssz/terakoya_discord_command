@@ -1,10 +1,12 @@
 import AWS from 'aws-sdk';
+import { dotenv } from 'dotenv';
+dotenv.config();
 
 // DynamoDBクライアントを初期化
 const dynamoDB = new AWS.DynamoDB.DocumentClient();
 
 // テーブル名
-const TABLE_NAME = 'token_transactions';
+const TABLE_NAME = process.env.DYNAMODB_TOKEN_TABLE_NAME;
 
 /**
  * トークンを取引する関数
