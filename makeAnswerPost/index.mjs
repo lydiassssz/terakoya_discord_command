@@ -52,10 +52,10 @@ export const handler = async (event) => {
 
         console.log(`Found channelId=${channelId} for quizId=${quizId}.`);
 
-        // 2. 解答チャンネルにメッセージを投稿
+          // 2. 解答チャンネルにメッセージを投稿
         const postUrl = `https://discord.com/api/v10/channels/${channelId}/messages`;
         const postBody = {
-          content: `【新規解答】\n回答者: <@${answererId}>\n\`\`\`\n${answerContent}\n\`\`\``,
+          content: `【新規解答】\n回答者: \n\`\`\`\n${answerContent}\n\`\`\``,
         };
 
         await fetch(postUrl, {
@@ -67,7 +67,8 @@ export const handler = async (event) => {
           body: JSON.stringify(postBody),
         });
 
-        console.log(`Posted answer from userId=${answererId} to channelId=${channelId}.`);
+        console.log(`Posted answer (anonymous) to channelId=${channelId}.`);
+
 
         // 3. チャンネル閲覧権限を回答者に付与する (Permission Overwrite)
         const permissionUrl = `https://discord.com/api/v10/channels/${channelId}/permissions/${answererId}`;
