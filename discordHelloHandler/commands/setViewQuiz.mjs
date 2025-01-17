@@ -1,5 +1,4 @@
-import { sendLogMessage } from '../utils.mjs';
-import { postMessage } from './discordApi.js';
+import { sendLogMessage,respondJSON } from '../utils.mjs';
 
 export async function handleViewQuizCommand(body, botToken, logChannelId) {
 
@@ -19,7 +18,11 @@ export async function handleViewQuizCommand(body, botToken, logChannelId) {
             }
         ]
     };
-
-    await postMessage(body.channel_id, message, botToken);
     await sendLogMessage(body, botToken, logChannelId);
+
+    return respondJSON({
+        type: 4,
+        data: message
+    });
+    
 }
