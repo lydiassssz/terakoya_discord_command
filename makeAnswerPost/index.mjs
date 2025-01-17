@@ -58,6 +58,7 @@ export const handler = async (event) => {
 
         console.log(`Found channelId=${channelId} for quizId=${quizId}.`);
 
+
         if (item.answerContent?.S !== "") {
           // 2. 解答チャンネルにメッセージを投稿
           const postUrl = `https://discord.com/api/v10/channels/${channelId}/messages`;
