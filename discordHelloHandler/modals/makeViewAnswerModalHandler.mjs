@@ -57,7 +57,7 @@ export async function handleAnswerModalSubmit(body, botToken, logChannelId) {
     return respondJSON({
       type: 4,
       data: {
-        content: "エラーが発生しました。もう一度お試しください。",
+        content: "エラーが発生しました。申し訳ありませんが、現在の状況をサーバー開発者に確認して頂けると助かります。エラー発生箇所#makeViewAnswerModalHandler",
         flags: 64,
       },
     });
@@ -90,7 +90,7 @@ export async function handleAnswerModalSubmit(body, botToken, logChannelId) {
       return respondJSON({
         type: 4, // CHANNEL_MESSAGE_WITH_SOURCE
         data: {
-          content: "エラーが発生しました。もう一度お試しください。",
+          content: "エラーが発生しました。申し訳ありませんが、現在の状況をサーバー開発者に確認して頂けると助かります。エラー発生箇所#makeViewAnswerModalHandler",
           flags: 64, // 64: EPHEMERAL (本人のみ見えるメッセージ)
         },
       });

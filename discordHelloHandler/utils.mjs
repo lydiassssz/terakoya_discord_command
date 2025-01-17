@@ -258,7 +258,10 @@ export async function checkIfUserAlreadyAnswered(userId, messageId) {
 
   try {
     const data = await client.send(new GetItemCommand(params));
-    return !!data.Item;
+    if (!data.Item) {
+      return false;
+    }
+    return ture;
   } catch (err) {
     console.error("回答済みチェック時にエラー:", err);
     return false;
