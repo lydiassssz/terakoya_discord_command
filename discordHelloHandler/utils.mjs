@@ -7,6 +7,8 @@ import { DynamoDBClient, ScanCommand } from "@aws-sdk/client-dynamodb";
 // 定数
 // -------------------------------------------------
 export const VIEW_CHANNEL = 1 << 10; // 1024
+const botToken = process.env.DISCORD_BOT_TOKEN;
+const logChannelId = process.env.BOT_LOG_CHANNEL_ID;
 
 // -------------------------------------------------
 // JSONレスポンスを返す (Discord用のインタラクション応答)
@@ -255,7 +257,7 @@ export async function checkIfUserAlreadyAnswered(userId, messageId) {
     },
   };
   const data = await client.send(new ScanCommand(params));
-  console.log(data);
+  await sendLogMessage(data, botToken, logChannelId);
   if (data.Items) {
     return ture;
   }
