@@ -39,10 +39,7 @@ export const handler = async (event) => {
         // DynamoDB StreamsのNewImageを取り出し
         const newItem = record.dynamodb.NewImage;
 
-        // Terakoya_quiz の想定フィールド
-        //   - forumChannelId (Id)
-        //   - quizTitle      (QuizTitle)
-        //   - quizText       (QuizText)
+        // レコードの属性を取得
         const forumChannelId = newItem?.Id?.S;
         const Timestamp      = newItem?.Timestamp?.S;
         const quizTitle      = newItem?.QuizTitle?.S || "新しいクイズ"; // 万が一無かったら仮タイトル
@@ -59,7 +56,7 @@ export const handler = async (event) => {
         // スレッドの名前（タイトル）
         const forumThreadName = quizTitle;
         
-        // 「回答する」ボタンのコンポーネント
+        // 「回答する」ボタンと「回答を見る」ボタンのコンポーネント
         const buttonComponent = {
           type: 1, // ActionRow
           components: [
@@ -68,6 +65,12 @@ export const handler = async (event) => {
               label: '回答する',
               style: 1,             // PRIMARY ボタン
               custom_id: 'answer_quiz'  // ボタン押下時のID(別で処理を設定)
+            },
+            {
+              type: 2,               // button
+              label: '回答を見る',
+              style: 2,             // SECONDARY ボタン
+              custom_id: 'view_answer'  // ボタン押下時のID(別で処理を設定)
             }
           ]
         };

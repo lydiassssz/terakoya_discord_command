@@ -1,8 +1,8 @@
 // slashCommands.mjs
 import { respondJSON, sendLogMessage } from "../utils.mjs";
-import { handleHelloCommand } from "../commands/hello.mjs";
 import { handleMakeSubjectCommand } from "../commands/makeSubjects.mjs";
 import { handleRemoveAccessCommand } from "../commands/removeAccess.mjs";
+import { handleViewQuizCommand } from "../commands/viewQuiz.mjs";
 
 // 新しく作ったファイル
 import {handleMakeQuizCommand} from "../commands/makeQuiz.mjs";
@@ -14,8 +14,6 @@ export async function handleSlashCommand(body) {
   const commandName = body.data.name;
 
   switch (commandName) {
-    case "hello":
-      return await handleHelloCommand(body, DISCORD_BOT_TOKEN, BOT_LOG_CHANNEL_ID);
 
     case "make_subject":
       return await handleMakeSubjectCommand(body, DISCORD_BOT_TOKEN, BOT_LOG_CHANNEL_ID);
@@ -26,6 +24,10 @@ export async function handleSlashCommand(body) {
     case "make_quiz":
       // スラッシュコマンド実行時
       return await handleMakeQuizCommand(body, DISCORD_BOT_TOKEN, BOT_LOG_CHANNEL_ID);
+
+    case "set_view_quiz":
+      // スラッシュコマンド実行時
+      return await handleViewQuizCommand(body, DISCORD_BOT_TOKEN, BOT_LOG_CHANNEL_ID);
 
     default:
       // 未対応コマンド

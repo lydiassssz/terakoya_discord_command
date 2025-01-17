@@ -58,24 +58,27 @@ export const handler = async (event) => {
 
         console.log(`Found channelId=${channelId} for quizId=${quizId}.`);
 
-        // 2. Discord チャンネルにメッセージを投稿
-        const postUrl = `https://discord.com/api/v10/channels/${channelId}/messages`;
-        const postBody = {
-          content: `【新規解答】\n\`\`\`\n${answerContent}\n\`\`\``,
-        };
 
-        await fetch(postUrl, {
-          method: "POST",
-          headers: {
-            Authorization: `Bot ${discordBotToken}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(postBody),
-        });
+        if (item.answerContent?.S !== "") {
+          // 2. 解答チャンネルにメッセージを投稿
+          const postUrl = `https://discord.com/api/v10/channels/${channelId}/messages`;
+          const postBody = {
+            content: `【新規解答】\n\`\`\`\n${answerContent}\n\`\`\``,
+          };
 
-        console.log(`Posted answer (anonymous) to channelId=${channelId}.`);
+          await fetch(postUrl, {
+            method: "POST",
+            headers: {
+              Authorization: `Bot ${token}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(postBody),
+          });
 
-        // 3. 回答者にチャンネル閲覧権限を付与 (Permission Overwrite)
+          console.log(`Posted answer (anonymous) to channelId=${channelId}.`);
+        }
+
+        // 3. チャンネル閲覧権限を回答者に付与する (Permission Overwrite)
         const permissionUrl = `https://discord.com/api/v10/channels/${channelId}/permissions/${answererId}`;
         const permissionBody = {
           allow: (1024 + 2048).toString(), // VIEW_CHANNEL(1024) + SEND_MESSAGES(2048) = 3072

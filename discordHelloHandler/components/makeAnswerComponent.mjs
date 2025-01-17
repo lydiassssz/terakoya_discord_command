@@ -1,4 +1,4 @@
-import { respondJSON } from "../utils.mjs";
+import { respondJSON, checkIfUserAlreadyAnswered } from "../utils.mjs";
 
 /**
  * クイズ回答ボタンを押した際に呼び出される関数。
@@ -13,10 +13,8 @@ export function handleAnswerQuizButton(body) {
   const userId = body?.member?.user?.id;
   const messageId = body?.message?.id;
 
-  // すでに回答しているかどうかのチェック
-  // ここではサンプルとして「false=未回答固定」としているが、
-  // 実際にはDB等で回答状況を判定する実装が必要
-  const alreadyAnswered = false; // checkIfUserAlreadyAnswered(userId, messageId);
+
+  const alreadyAnswered = checkIfUserAlreadyAnswered(userId, messageId);
 
   if (alreadyAnswered) {
     // 既に回答している場合はエラーメッセージをエフェメラル(本人にしか見えない)で返す
