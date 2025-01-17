@@ -5,8 +5,21 @@ import fetch from "node-fetch"; // Node.js 18 以降の Lambda なら省略可�
 export const handler = async (event) => {
   // Discord Bot Token は環境変数などから取得
   const discordBotToken = process.env.DISCORD_BOT_TOKEN;
-  if (!discordBotToken) {
-    console.error("DISCORD_BOT_TOKEN が定義されていません。");
+  const transactFunctionUrl = process.env.TRANSACT_FUNCTION_URL;
+
+  const validateEnv = (key) => {
+    const value = process.env[key];
+    if (!value) {
+      console.error(`${key} が定義されていません。`);
+      return false;
+    }
+    return true;
+  };
+
+  if (
+    !validateEnv("DISCORD_BOT_TOKEN") ||
+    !validateEnv("TRANSACT_FUNCTION_URL")
+  ) {
     return;
   }
 
@@ -44,14 +57,18 @@ export const handler = async (event) => {
         const items = queryResult.Items || [];
 
         if (items.length === 0) {
-          console.warn(`Terakoya_quiz に quizId=${quizId} のレコードが見つかりません。`);
+          console.warn(
+            `Terakoya_quiz に quizId=${quizId} のレコードが見つかりません。`
+          );
           continue; // 次のレコードへ
         }
 
         const item = items[0];
         const channelId = item.channelId?.S;
         if (!channelId) {
-          console.warn(`クイズ情報に channelId がありません (quizId=${quizId})`);
+          console.warn(
+            `クイズ情報に channelId がありません (quizId=${quizId})`
+          );
           continue;
         }
 
@@ -95,40 +112,37 @@ export const handler = async (event) => {
 
         console.log(`Granted channel permissions to userId=${answererId}`);
 
-        // 4. 回答者にトークンを100付与 (別のLambdaをInvoke)
+        // 4. 回答者にトークンを100付与 (Function URL を使用)
         try {
           // Lambdaに渡すペイロード
           const payloadObject = {
             action: "transact",
             user_id: answererId, // tokenMarketHandler がユーザーIDとして解釈できるものを指定
-            amount: 100,         // 付与するトークン量
+            amount: 100, // 付与するトークン量
             description: "Quiz answer reward",
           };
 
-          const invokeCommand = new InvokeCommand({
-            FunctionName: tokenMarketLambdaArn,
-            InvocationType: "RequestResponse", 
-            Payload: new TextEncoder().encode(JSON.stringify(payloadObject)),
+          const response = await fetch(transactFunctionUrl, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payloadObject),
           });
 
-          const response = await lambdaClient.send(invokeCommand);
-
-          // レスポンスペイロードの取り出し
-          if (response.Payload) {
-            const decodedPayload = new TextDecoder().decode(response.Payload);
-            const parsed = JSON.parse(decodedPayload); // { statusCode, body, ... } の形を想定
-            if (parsed.statusCode === 200) {
-              console.log("トークン付与成功:", parsed.body);
-            } else {
-              console.error("トークン付与失敗:", parsed.body);
-            }
-          } else {
-            console.error("トークン付与失敗: Payload がありません。");
+          if (!response.ok) {
+            const errorBody = await response.text();
+            console.error(
+              `トークン付与失敗: ステータスコード ${response.status}, ${errorBody}`
+            );
+            throw new Error(`トークン付与失敗: ${response.status}`);
           }
+
+          const result = await response.json();
+          console.log("トークン付与成功:", result);
         } catch (invokeError) {
           console.error("トークン付与呼び出し時にエラーが発生:", invokeError);
         }
-
       } catch (err) {
         console.error("エラーが発生しました: ", err);
         // 必要に応じてリトライや通知などの処理を実装
