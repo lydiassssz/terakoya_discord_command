@@ -103,7 +103,7 @@ export const handler = async (event) => {
             action: "transact",
             user_id: answererId, // tokenMarketHandler がユーザーIDとして解釈できるものを指定
             amount: 100, // 付与するトークン量
-            description: "Quiz answer reward",
+            description: `Answered for ${quizId}`,
           };
 
           const response = await fetch(transactFunctionUrl, {
