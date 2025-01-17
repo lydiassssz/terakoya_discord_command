@@ -15,7 +15,7 @@ import { PutItemCommand } from "@aws-sdk/client-dynamodb";
  * @param {string} logChannelId - ログを送る先のチャンネルID
  * @returns {Object} - respondJSONで返すべきレスポンスオブジェクト
  */
-export async function handleAnswerModalSubmit(body, botToken, logChannelId) {
+export async function handleViewAnswerModalSubmit(body, botToken, logChannelId) {
   dotenv.config();
 
   // モーダルのカスタムIDから quizId を取得
