@@ -242,3 +242,25 @@ const forumChannels = (data.Items || []).map((item) => {
 
   return forumChannels;
 }
+
+export async function checkIfUserAlreadyAnswered(userId, messageId) {
+  // 1) DynamoDB クライアントを生成
+  const client = new DynamoDBClient({});
+
+  // 2) DynamoDB から回答済みかどうかを確認
+  const params = {
+    TableName: process.env.DYNAMODB_ANSWER_TABLE_NAME,
+    Key: {
+      quizId: { S: messageId },
+      answererId: { S: userId },
+    },
+  };
+
+  try {
+    const data = await client.send(new GetItemCommand(params));
+    return !!data.Item;
+  } catch (err) {
+    console.error("回答済みチェック時にエラー:", err);
+    return false;
+  }
+} 
