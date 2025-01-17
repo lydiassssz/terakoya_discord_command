@@ -2,7 +2,7 @@
 import { respondJSON, sendLogMessage } from "../utils.mjs";
 import { handleMakeSubjectCommand } from "../commands/makeSubjects.mjs";
 import { handleRemoveAccessCommand } from "../commands/removeAccess.mjs";
-import { handleViewQuizCommand } from "../commands/viewQuiz.mjs";
+import { handleViewQuizCommand } from "../commands/setViewQuiz.mjs";
 
 // 新しく作ったファイル
 import {handleMakeQuizCommand} from "../commands/makeQuiz.mjs";
