@@ -7,22 +7,6 @@ export const handler = async (event) => {
   const discordBotToken = process.env.DISCORD_BOT_TOKEN;
   const transactFunctionUrl = process.env.TRANSACT_FUNCTION_URL;
 
-  const validateEnv = (key) => {
-    const value = process.env[key];
-    if (!value) {
-      console.error(`${key} が定義されていません。`);
-      return false;
-    }
-    return true;
-  };
-
-  if (
-    !validateEnv("DISCORD_BOT_TOKEN") ||
-    !validateEnv("TRANSACT_FUNCTION_URL")
-  ) {
-    return;
-  }
-
   // TokenMarketHandler Lambda の ARN (ハードコード or 環境変数で管理)
   const tokenMarketLambdaArn =
     process.env.TOKEN_MARKET_LAMBDA_ARN ||
