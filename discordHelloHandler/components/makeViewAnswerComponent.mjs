@@ -8,15 +8,15 @@ import { respondJSON,checkIfUserAlreadyAnswered } from "../utils.mjs";
  * @param {Object} body - Discordから送られるInteractionのボディ
  * @returns {Object} respondJSONで返すべきレスポンスオブジェクト
  */
-export function handleViewAnswerButton(body) {
+export async function handleViewAnswerButton(body) {
   // DiscordのInteractionボディから必要な情報を取り出す
   const userId = body?.member?.user?.id;
   const messageId = body?.message?.id;
 
   // すでに閲覧権限取得済みかどうかのチェック
-  const alreadyAnswered = checkIfUserAlreadyAnswered(userId, messageId);
+  const alreadyAnswered = await checkIfUserAlreadyAnswered(userId, messageId);
 
-  if (alreadyAnswered) {
+  if (alreadyAnswered === true) {
     return respondJSON({
       type: 4,
       data: {

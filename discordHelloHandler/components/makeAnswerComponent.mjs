@@ -1,4 +1,8 @@
-import { respondJSON, checkIfUserAlreadyAnswered } from "../utils.mjs";
+import { respondJSON, checkIfUserAlreadyAnswered, sendLogMessage } from "../utils.mjs";
+import { DynamoDBClient, ScanCommand } from "@aws-sdk/client-dynamodb";
+import { CloudWatchLogsClient, PutLogEventsCommand } from "@aws-sdk/client-cloudwatch-logs";
+
+
 
 /**
  * クイズ回答ボタンを押した際に呼び出される関数。
@@ -8,23 +12,40 @@ import { respondJSON, checkIfUserAlreadyAnswered } from "../utils.mjs";
  * @param {Object} body - Discordから送られるInteractionのボディ
  * @returns {Object} respondJSONで返すべきレスポンスオブジェクト
  */
-export function handleAnswerQuizButton(body) {
+export async function handleAnswerQuizButton(body) {
   // DiscordのInteractionボディから必要な情報を取り出す
   const userId = body?.member?.user?.id;
   const messageId = body?.message?.id;
 
 
-  const alreadyAnswered = checkIfUserAlreadyAnswered(userId, messageId);
+  const alreadyAnswered = await checkIfUserAlreadyAnswered(userId, messageId);
+  const logClient = new CloudWatchLogsClient({});
+  const logGroupName = "/aws/lambda/discordHelloHandler";
+  const logStreamName = "test";
 
-  if (alreadyAnswered) {
+  const logParams = {
+    logGroupName,
+    logStreamName,
+    logEvents: [
+      {
+        message: JSON.stringify({alreadyAnswered, "code": "handleAnswerQuizButton"}),
+        timestamp: Date.now(),
+      },
+    ],
+  };
+
+  await logClient.send(new PutLogEventsCommand(logParams));
+
+  if (alreadyAnswered === true) {
     // 既に回答している場合はエラーメッセージをエフェメラル(本人にしか見えない)で返す
     return respondJSON({
       type: 4, // CHANNEL_MESSAGE_WITH_SOURCE
       data: {
-        content: "alreadyAnswered",
-        flags: 64, // 64: EPHEMERAL (本人のみ見えるメッセージ)
+      content: "既にクイズに回答しています。",
+      flags: 64, // エフェメラルメッセージ (本人にしか見えない)
       },
     });
+    
   } else {
     // 未回答の場合はモーダルを開く
     // Discordモーダル表示のためのtypeは9 (MODAL)

@@ -69,7 +69,7 @@ export const handler = async (event) => {
           await fetch(postUrl, {
             method: "POST",
             headers: {
-              Authorization: `Bot ${token}`,
+              Authorization: `Bot ${discordBotToken}`,
               "Content-Type": "application/json",
             },
             body: JSON.stringify(postBody),
