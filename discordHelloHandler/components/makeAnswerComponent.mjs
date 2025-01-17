@@ -21,7 +21,7 @@ export function handleAnswerQuizButton(body) {
     return respondJSON({
       type: 4, // CHANNEL_MESSAGE_WITH_SOURCE
       data: {
-        content: "すでにこのクイズに回答済みです。",
+        content: "alreadyAnswered",
         flags: 64, // 64: EPHEMERAL (本人のみ見えるメッセージ)
       },
     });

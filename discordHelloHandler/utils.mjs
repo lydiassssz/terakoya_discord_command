@@ -259,7 +259,7 @@ export async function checkIfUserAlreadyAnswered(userId, messageId) {
   const data = await client.send(new ScanCommand(params));
   await sendLogMessage(data, botToken, logChannelId);
   if (data.Items) {
-    return ture;
+    return respondJSON(data);
   }
     return false;
 }
