@@ -223,7 +223,6 @@ export async function getForumChannelsInCategory(TableName) {
   // 1) DynamoDB クライアントを生成
   const ddbClient = new DynamoDBClient({});
 
-  // 2) Scan で全件取得 (本番ではなるべく Query で絞り込むか、必要に応じて FilterExpression を使うのが望ましい)
   const params = {
     TableName: TableName,
   };
@@ -255,16 +254,10 @@ export async function checkIfUserAlreadyAnswered(userId, messageId) {
       answererId: { S: userId },
     },
   };
-
-  try {
-    const data = await client.send(new GetItemCommand(params));
-    if (data.Item) {
-      console.log(data);
-      return ture;
-    }
-    return false;
-  } catch (err) {
-    console.error("回答済みチェック時にエラー:", err);
-    return false;
+  const data = await ddbClient.send(new ScanCommand(params));
+  console.log(data);
+  if (data.Items) {
+    return ture;
   }
-} 
+    return false;
+}
