@@ -17,26 +17,7 @@ export async function handleAnswerQuizButton(body) {
   const userId = body?.member?.user?.id;
   const messageId = body?.message?.id;
 
-
-  const alreadyAnswered = await checkIfUserAlreadyAnswered(userId, messageId);
-  const logClient = new CloudWatchLogsClient({});
-  const logGroupName = "/aws/lambda/discordHelloHandler";
-  const logStreamName = "test";
-
-  const logParams = {
-    logGroupName,
-    logStreamName,
-    logEvents: [
-      {
-        message: JSON.stringify({alreadyAnswered, "code": "handleAnswerQuizButton"}),
-        timestamp: Date.now(),
-      },
-    ],
-  };
-
-  await logClient.send(new PutLogEventsCommand(logParams));
-
-  if (alreadyAnswered === true) {
+  if (await checkIfUserAlreadyAnswered(userId, messageId) === true) {
     // 既に回答している場合はエラーメッセージをエフェメラル(本人にしか見えない)で返す
     return respondJSON({
       type: 4, // CHANNEL_MESSAGE_WITH_SOURCE

@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
-import { respondJSON, sendLogMessage } from "../utils.mjs";
-import { PutItemCommand } from "@aws-sdk/client-dynamodb";
+import { respondJSON } from "../utils.mjs";
+import { PutItemCommand, DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import { CloudWatchLogsClient, PutLogEventsCommand } from "@aws-sdk/client-cloudwatch-logs";
 
 /**
  * モーダル送信時に発火する関数です。
@@ -25,77 +26,38 @@ export async function handleViewAnswerModalSubmit(body, botToken, logChannelId) 
   // ユーザーIDを取得
   const viewerId = body?.member?.user?.id;
 
-  try {
-    await client.send(new PutItemCommand(params));
+  // lambda関数tokenMarketHandlerのtransact_token関数にリクエストを送る
+  const response = await fetch(process.env.TRANSACT_FUNCTION_URL, {
+    method: "POST",
+    headers: {
+    "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+    action: "transact",
+    user_id: viewerId,
+    amount: -100,
+    description: `Purchase item for quiz ${quizId}`,
+    }),
+  });
 
-    // lambda関数tokenMarketHandlerのtransact_token関数にリクエストを送る
-    const response = await fetch(process.env.TRANSACT_FUNCTION_URL, {
-      method: "POST",
-      headers: {
-      "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-      action: "transact",
-      user_id: viewerId,
-      amount: -100,
-      description: `Purchase item for quiz ${quizId}`,
-      }),
-    });
+  const result = await response.json();
 
-    const result = await response.json();
-
-    if (!response.ok) {
-      throw new Error(result.message || "Lambda function request failed");
-    }
-
-    await sendLogMessage(body, botToken, logChannelId);
-
-  } catch (err) {
-    await sendLogMessage(body, botToken, logChannelId);
-
-    // ユーザーへはエラーメッセージを返す
-    return respondJSON({
-      type: 4,
-      data: {
-        content: "エラーが発生しました。申し訳ありませんが、現在の状況をサーバー開発者に確認して頂けると助かります。エラー発生箇所#makeViewAnswerModalHandler",
-        flags: 64,
-      },
-    });
+  if (!response.ok) {
+    throw new Error(result.message || "Lambda function request failed");
   }
 
   // 4. DynamoDBへ書き込み
-    const client = new DynamoDBClient({});
-    try {
-      const params = {
-        TableName: process.env.DYNAMODB_ANSWER_TABLE_NAME,
-        Item: {
-          quizId: { S: quizId },
-          answererId: { S: viewerId },
-          answerContent: { S: "" },
-          createdAt: { S: new Date().toISOString() },
-        },
-      };
-      await client.send(new PutItemCommand(params));
-  
-      // 5. ログ送信 (モーダルの内容をDiscordに投稿)
-      //    sendLogMessageは body からユーザ名, custom_id, 入力値等を自動で取得して送信します
-      await sendLogMessage(body, botToken, logChannelId);
-  
-    } catch (err) {
-      // エラーが発生した場合も必要に応じてログを送信可能
-      // （ただし送信内容は「モーダル送信」ログとして出力される点に注意）
-      await sendLogMessage(body, botToken, logChannelId);
-  
-      // ユーザーへはエラーメッセージを返す
-      return respondJSON({
-        type: 4, // CHANNEL_MESSAGE_WITH_SOURCE
-        data: {
-          content: "エラーが発生しました。申し訳ありませんが、現在の状況をサーバー開発者に確認して頂けると助かります。エラー発生箇所#makeViewAnswerModalHandler",
-          flags: 64, // 64: EPHEMERAL (本人のみ見えるメッセージ)
-        },
-      });
-    }
-
+  const client = new DynamoDBClient({});
+  const params = {
+    TableName: process.env.DYNAMODB_ANSWER_TABLE_NAME,
+    Item: {
+      quizId: { S: quizId },
+      answererId: { S: viewerId },
+      answerContent: { S: "" },
+      createdAt: { S: new Date().toISOString() },
+    },
+  };
+  await client.send(new PutItemCommand(params));
   // 6. ユーザーへのレスポンス (Ephemeral メッセージ)
   return respondJSON({
     type: 4,
@@ -105,3 +67,6 @@ export async function handleViewAnswerModalSubmit(body, botToken, logChannelId) 
     },
   });
 }
+
+
+  

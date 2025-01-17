@@ -1,7 +1,7 @@
 import fetch from "node-fetch";
 import nacl from "tweetnacl";
 import { DynamoDBClient, GetItemCommand, ScanCommand } from "@aws-sdk/client-dynamodb";
-import { CloudWatchLogsClient, PutLogEventsCommand } from "@aws-sdk/client-cloudwatch-logs";
+
 
 
 // -------------------------------------------------
@@ -258,34 +258,7 @@ export async function checkIfUserAlreadyAnswered(userId, messageId) {
     },
   };
   const data = await client.send(new GetItemCommand(params));
-  const logClient = new CloudWatchLogsClient({});
-  const logGroupName = "/aws/lambda/discordHelloHandler";
-  const logStreamName = "test";
 
-  const logParams1 = {
-    logGroupName,
-    logStreamName,
-    logEvents: [
-      {
-        message: JSON.stringify({ userId, messageId,"code": "checkIfUserAlreadyAnswered"}),
-        timestamp: Date.now(),
-      }
-    ],
-  };
-
-  const logParams2 = {
-    logGroupName,
-    logStreamName,
-    logEvents: [
-      {
-        message: JSON.stringify({data,"code": "checkIfUserAlreadyAnswered"}),
-        timestamp: Date.now(),
-      },
-    ],
-  };
-
-  await logClient.send(new PutLogEventsCommand(logParams1));
-  await logClient.send(new PutLogEventsCommand(logParams2));
   if (data.Item) {
     return true;
   }

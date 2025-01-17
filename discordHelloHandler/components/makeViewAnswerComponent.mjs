@@ -13,10 +13,7 @@ export async function handleViewAnswerButton(body) {
   const userId = body?.member?.user?.id;
   const messageId = body?.message?.id;
 
-  // すでに閲覧権限取得済みかどうかのチェック
-  const alreadyAnswered = await checkIfUserAlreadyAnswered(userId, messageId);
-
-  if (alreadyAnswered === true) {
+  if (await checkIfUserAlreadyAnswered(userId, messageId) === true) {
     return respondJSON({
       type: 4,
       data: {
@@ -26,21 +23,25 @@ export async function handleViewAnswerButton(body) {
     });
   } else {
     return respondJSON({
-      type: 9,
+      type: 9, // モーダルを返す
       data: {
-        custom_id: `answer_view_modal_${messageId}`,
-        title: "みんなの答えを見る",
+        custom_id: `answer_view_modal_${messageId}`, // モーダルのID
+        title: "支払い確認",
         components: [
           {
-            // Action Row
-            type: 1,
+            type: 1, // Action Row
             components: [
               {
-                // Button
-                type: 2,
-                style: 1,
-                custom_id: "confirm_view",
-                label: "実行には100EDUを使用します",
+                // Text Input
+                type: 4,
+                custom_id: "answer_view",
+                style: 2, // 2 -> パラグラフ形式（複数行）
+                label: "100トークンを支払いますか？",
+                required: false,
+                min_length: 1,
+                max_length: 100,
+                placeholder:
+                  "ここには何も記述する必要はありません",
               },
             ],
           },
