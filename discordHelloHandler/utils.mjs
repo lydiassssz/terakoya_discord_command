@@ -254,7 +254,7 @@ export async function checkIfUserAlreadyAnswered(userId, messageId) {
       answererId: { S: userId },
     },
   };
-  const data = await ddbClient.send(new ScanCommand(params));
+  const data = await client.send(new ScanCommand(params));
   console.log(data);
   if (data.Items) {
     return ture;
