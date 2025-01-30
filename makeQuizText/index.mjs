@@ -7,14 +7,14 @@ import {
 dotenv.config();
 
 
-// todo 何だこのコードは。何をしているのかわからない。
+// todo 何だこのコードは。何をしているのかまるでわからない。
 
 //================================================
 // 環境変数
 //================================================
 const DISCORD_BOT_TOKEN     = process.env.DISCORD_BOT_TOKEN;       // Botトークン
 const BOT_LOG_CHANNEL_ID    = process.env.BOT_LOG_CHANNEL_ID;      // ログ出力先チャンネルID
-const HAKOBUNE_CATEGORY_ID  = "1321014475700310107";    // カテゴリID
+const HAKOBUNE_ANSWER_CATEGORY_ID  = "1334459505445961829";    // カテゴリID
 const GUILD_ID              = process.env.GUILD_ID;                // DiscordサーバーID
 const DYNAMODB_QUIZ_TABLE_NAME     = process.env.DYNAMODB_QUIZ_TABLE_NAME;       // DynamoDBテーブル名
 
@@ -110,7 +110,7 @@ export const handler = async (event) => {
 
         //================================================
         // 2) 新しいテキストチャンネルを作成
-        //    - カテゴリ： HAKOBUNE_CATEGORY_ID
+        //    - カテゴリ： HAKOBUNE_ANSWER_CATEGORY_ID
         //    - 名前：問題文の先頭10文字
         //    - permission_overwrites は指定しない → カテゴリの権限継承
         //================================================
@@ -124,7 +124,7 @@ export const handler = async (event) => {
           const payload = {
             name: newChannelName,
             type: 0, // 0 = GUILD_TEXT
-            parent_id: HAKOBUNE_CATEGORY_ID
+            parent_id: HAKOBUNE_ANSWER_CATEGORY_ID
             // permission_overwrites: [] を指定しなければカテゴリの権限同期
           };
 
